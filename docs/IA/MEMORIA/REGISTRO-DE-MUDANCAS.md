@@ -64,3 +64,9 @@ Este registro complementa, mas não substitui, o histórico Git.
 
 - Configurado o remoto `origin` para o repositório `IvanildoCandido/fixar_app` no GitHub via SSH.
 - Nenhum fetch, push, publicação ou commit foi executado.
+
+## 2026-08-26 — Atalho de manutenção por equipamento do cliente
+
+- Substituído na listagem de clientes o ícone genérico de manutenção pelo mesmo ícone usado na aba de equipamentos.
+- A seleção de um equipamento vinculado ao cliente agora abre uma nova manutenção com cliente e equipamento previamente selecionados.
+- Typecheck e export do bundle iOS aprovados.

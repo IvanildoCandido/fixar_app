@@ -1,4 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { useEffect, useState, useRef } from "react";
 import { TextInputMaskMethods } from "react-native-masked-text";
 import { Button } from "../../components/Form/Button";
@@ -34,12 +34,14 @@ import { useTheme } from "styled-components/native";
 import { FormField } from "../../design-system";
 import { useAuth } from "../../auth/AuthContext";
 import { calculateReminderDueDate, scheduleMaintenanceReminder } from "../../services/maintenanceReminders";
+import { RootParamList } from "../../routes/routes.types";
 
 export const Repair = () => {
   const theme = useTheme();
+  const route = useRoute<RouteProp<RootParamList, "Repair">>();
   const [selectedCustomer, setSelectedCustomer] =
-    useState<Customer>(defaultCustomer);
-  const [selectedDevice, setSelectedDevice] = useState<Device>(defaultDevice);
+    useState<Customer>(route.params?.customer ?? defaultCustomer);
+  const [selectedDevice, setSelectedDevice] = useState<Device>(route.params?.device ?? defaultDevice);
   const [services, setServices] = useState<ItensProps[]>([]);
   const [parts, setParts] = useState<ItensProps[]>([]);
   const [notification, setNotification] = useState(false);

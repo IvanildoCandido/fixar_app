@@ -12,13 +12,18 @@ import {
 
 interface Props {
   device: Device;
-  setDevice: React.Dispatch<SetStateAction<Device>>;
+  setDevice?: React.Dispatch<SetStateAction<Device>>;
+  onSelect?: (device: Device) => void;
   closeModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
-export const DeviceItemSelect = ({ device, setDevice, closeModal }: Props) => {
+export const DeviceItemSelect = ({ device, setDevice, onSelect, closeModal }: Props) => {
   const handlerSelect = () => {
-    setDevice(device);
+    if (onSelect) {
+      onSelect(device);
+    } else {
+      setDevice?.(device);
+    }
     closeModal(false);
   };
 

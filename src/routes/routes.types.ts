@@ -1,7 +1,7 @@
-// routes.types.ts
+import { Customer, Device } from "../types/data";
 
 export type RootParamList = {
   Login: undefined;
   MainTabs: undefined;
-  // adicione aqui as definições de outras telas da sua aplicação
+  Repair: { customer: Customer; device: Device } | undefined;
 };

@@ -21,6 +21,7 @@ Este documento descreve o worktree observado, não produção.
 - Seleção de clientes agora usa bottom sheet pesquisável, lista virtualizada, contagem e estados de loading/erro/vazio; buscas também foram adicionadas às telas de clientes, equipamentos, peças e serviços.
 - Seletores de equipamentos, peças, serviços e equipamentos em lote também usam o padrão pesquisável; login passou a ter hierarquia explícita entre ações primária, secundária e textual.
 - Cartões das listagens de clientes, equipamentos, peças e serviços compartilham primitivas e ações acessíveis; scanner QR foi refeito como câmera em tela inteira com enquadramento e estado de permissão.
+- Na listagem de clientes, a ação de equipamentos usa o mesmo ícone da aba correspondente e a seleção de um equipamento inicia uma manutenção com cliente e equipamento já preenchidos.
 - Formulários modais de cliente, equipamento, peça e serviço, além de calendário e filtros, compartilham `FormModal`; estilos das telas de ordem, orçamento e ordem em lote foram consolidados. Material Icons e `RFValue` deixaram de ser usados na UI React Native.
 - Cabeçalhos operacionais deixaram de renderizar ações vazias e agora exibem retorno com contraste explícito. Manutenção individual, manutenção em lote e orçamento compartilham também a hierarquia revisada de cartões, seletores com contagem/estado vazio, observações, totais e ações.
 - Typecheck aprovado e aplicativo compilado, instalado e aberto no simulador iOS `iPhone 17 Pro`.

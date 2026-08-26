@@ -1,9 +1,9 @@
 import { SetStateAction, useState } from "react";
 import { Alert, Modal } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import API from "../../services/API";
-import { Customer, CustomerDevices } from "../../types/data";
-import { defaultDevice } from "../../utils/dafaultValues";
-import { Pencil, Trash2, Wrench } from "lucide-react-native";
+import { Customer, CustomerDevices, Device } from "../../types/data";
+import { Pencil, Snowflake, Trash2 } from "lucide-react-native";
 import { useTheme } from "styled-components/native";
 
 import {
@@ -41,8 +41,8 @@ export const CustomerItem = ({
   setLoading,
 }: Props) => {
   const theme = useTheme();
+  const navigation = useNavigation<any>();
   const [deviceModal, setDeviceModal] = useState(false);
-  const [, setSelected] = useState(defaultDevice);
 
   const getData = async () => {
     try {
@@ -55,6 +55,13 @@ export const CustomerItem = ({
 
   const handlerListDevices = (id: string) => {
     setDeviceModal(true);
+  };
+
+  const handleDeviceSelect = (device: Device) => {
+    navigation.navigate("Repair", {
+      customer: device.Customer,
+      device,
+    });
   };
 
   const handlerEdit = async (id: string) => {
@@ -104,7 +111,7 @@ export const CustomerItem = ({
       </InfoArea>
       <IconsArea>
         <TouchAction accessibilityLabel="Ver equipamentos" onPress={() => handlerListDevices(id)}>
-          <Wrench size={18} color={theme.colors.muted} />
+          <Snowflake size={18} color={theme.colors.muted} />
         </TouchAction>
         <TouchAction accessibilityLabel="Editar cliente" onPress={() => handlerEdit(id)}>
           <Pencil size={18} color={theme.colors.muted} />
@@ -117,7 +124,7 @@ export const CustomerItem = ({
         <SelectionDevice
           customerId={id}
           closeModal={setDeviceModal}
-          setDevice={setSelected}
+          onSelect={handleDeviceSelect}
         />
       </Modal>
     </Container>
