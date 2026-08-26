@@ -14,6 +14,13 @@ export const defaultDevice: Device = {
   model: "",
   brand: "",
   location: "Selecione um equipamento",
+  equipmentType: "",
+  serialNumber: "",
+  capacityBtu: null,
+  voltage: null,
+  phase: null,
+  refrigerant: "",
+  installedAt: null,
 };
 export const defaultCustomer: Customer = {
   id: "",

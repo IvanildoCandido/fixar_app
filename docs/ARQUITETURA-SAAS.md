@@ -30,6 +30,9 @@ Todas as tabelas de negócio possuem `organization_id`, `id` UUID, `created_at`,
 - `quotes`: orçamento e estado de aprovação.
 - `quote_items`: peças/serviços e valores congelados no orçamento.
 - `attachments`: metadados de fotos, documentos e assinaturas em storage privado.
+- `technical_templates`: definições reutilizáveis de checklist e medições por organização/tipo de atendimento.
+- `work_order_technical_checks`: verificações estruturadas executadas em uma ordem, com status e observação.
+- `work_order_measurements`: medições técnicas extensíveis, unidade e origem manual ou calculada.
 - `audit_events`: trilha imutável das operações sensíveis.
 
 ## Isolamento e segurança

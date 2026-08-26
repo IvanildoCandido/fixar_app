@@ -5,7 +5,7 @@ import { Button } from "../../components/Form/Button";
 import { CheckBox } from "../../components/Form/CheckBox";
 import { Input } from "../../components/Form/Input";
 import { ItensProps, SelectItens } from "../../components/Form/ItensSelector";
-import { Customer, Device } from "../../types/data";
+import { Customer, Device, MaintenanceDiagnosis, MaintenanceResult, TechnicalCheck, TechnicalMeasurement } from "../../types/data";
 import { Header } from "../../components/Header";
 import {
   Container,
@@ -35,6 +35,9 @@ import { FormField } from "../../design-system";
 import { useAuth } from "../../auth/AuthContext";
 import { calculateReminderDueDate, scheduleMaintenanceReminder } from "../../services/maintenanceReminders";
 import { RootParamList } from "../../routes/routes.types";
+import { ChoiceChips, CollapsibleSection, MeasurementsEditor, TechnicalChecksEditor } from "../../components/TechnicalMaintenance";
+import { checksForServiceNames, makeDefaultChecks, maskedMoneyValue, withCalculatedDeltaT } from "../../domain/technicalMaintenance";
+import { SignaturePad } from "../../components/SignaturePad";
 
 export const Repair = () => {
   const theme = useTheme();
@@ -52,6 +55,13 @@ export const Repair = () => {
   const incrementRaw = useRef<TextInputMaskMethods | any>(null);
   const discountRaw = useRef<TextInputMaskMethods | any>(null);
   const [comments, setComments] = useState("");
+  const [diagnosis, setDiagnosis] = useState<MaintenanceDiagnosis>({});
+  const [checks, setChecks] = useState<TechnicalCheck[]>(makeDefaultChecks);
+  const [measurements, setMeasurements] = useState<TechnicalMeasurement[]>([]);
+  const [result, setResult] = useState<MaintenanceResult>({});
+  const [technicianSignatureSvg, setTechnicianSignatureSvg] = useState("");
+  const [customerSignatureSvg, setCustomerSignatureSvg] = useState("");
+  const [customerSignerName, setCustomerSignerName] = useState("");
   const [total, setTotal] = useState(0);
   const navigation = useNavigation<any>();
   const [modal, setModal] = useState(false);
@@ -59,18 +69,22 @@ export const Repair = () => {
 
   useEffect(() => {
     const totalParts = parts.reduce((acc, value) => {
-      return acc + parseFloat(value.price);
+      return acc + parseFloat(value.price) * Number(value.quantity ?? 1);
     }, 0);
     const totalServices = services.reduce((acc, value) => {
-      return acc + parseFloat(value.price);
+      return acc + parseFloat(value.price) * Number(value.quantity ?? 1);
     }, 0);
     setTotal(
       totalServices +
         totalParts +
-        parseFloat(incrementRaw?.current.getRawValue()) -
-        parseFloat(discountRaw?.current.getRawValue())
+        maskedMoneyValue(incrementRaw, increment) -
+        maskedMoneyValue(discountRaw, discount)
     );
   }, [parts, services, increment, discount]);
+
+  useEffect(() => {
+    setChecks((current) => checksForServiceNames(services.map((item) => item.name), current));
+  }, [services]);
 
   const handlerRegister = async () => {
     const intervalDays = Number(reminderDays);
@@ -95,6 +109,15 @@ export const Repair = () => {
       reminderEnabled: notification,
       reminderIntervalDays: notification ? intervalDays : null,
       reminderDueAt: reminderDueAt?.toISOString() ?? null,
+      diagnosis,
+      checks: checks.filter((item) => item.status !== "not_checked"),
+      measurements,
+      result,
+      technicianName: session?.user.name,
+      technicianSignatureSvg,
+      customerSignatureSvg,
+      customerSignerName,
+      signedAt: technicianSignatureSvg || customerSignatureSvg ? new Date().toISOString() : null,
     };
 
     Alert.alert(
@@ -169,70 +192,47 @@ export const Repair = () => {
             <QrCode size={22} color={theme.colors.primary} />
           </ButtonScan>
         </ScanArea>
-        <SelectItens
-          itens={services}
-          setItens={setServices}
-          dataTable="services"
-          selectorLabel="Serviços realizados:"
-          modalTitle="Serviços"
-        />
-        <SelectItens
-          itens={parts}
-          setItens={setParts}
-          dataTable="parts"
-          selectorLabel="Peças substituídas:"
-          modalTitle="Peças"
-        />
-        <InfoText>Observações</InfoText>
-        <TextArea
-          multiline={true}
-          numberOfLines={4}
-          onChangeText={setComments}
-          value={comments}
-        />
-        <EntriesArea>
-          <Side>
-            <Input
-              value={discount}
-              label="Descontos:"
-              placeholder="R$ 0,00"
-              keyboardType="numeric"
-              onChangeText={(value) => setDiscount(value)}
-              type="money"
-              rawValue={discountRaw}
-            />
-          </Side>
-          <Side>
-            <Input
-              value={increment}
-              label="Acréscimos"
-              placeholder="R$ 0,00"
-              keyboardType="numeric"
-              onChangeText={(value) => setIncrement(value)}
-              type="money"
-              rawValue={incrementRaw}
-            />
-          </Side>
-        </EntriesArea>
-        <CheckBox
-          title="Marcar para lembrete periódico"
-          checked={notification}
-          setChecked={setNotification}
-        />
-        {notification ? (
-          <FormField
-            label="Prazo para a próxima manutenção (dias)"
-            value={reminderDays}
-            onChangeText={(value) => {
-              setReminderDays(value.replace(/\D/g, ""));
-              setReminderError("");
-            }}
-            keyboardType="number-pad"
-            placeholder="Ex.: 90"
-            error={reminderError}
-            required
-          />
-        ) : null}
+        <CollapsibleSection title="Diagnóstico" state={diagnosis.reportedProblem || diagnosis.foundCondition || diagnosis.technicalDiagnosis ? "complete" : "pending"}>
+          <FormField label="Problema relatado" value={diagnosis.reportedProblem ?? ""} onChangeText={(reportedProblem) => setDiagnosis((value) => ({ ...value, reportedProblem }))} multiline placeholder="Relato curto do cliente" />
+          <FormField label="Condição encontrada" value={diagnosis.foundCondition ?? ""} onChangeText={(foundCondition) => setDiagnosis((value) => ({ ...value, foundCondition }))} multiline placeholder="O que foi encontrado" />
+          <FormField label="Diagnóstico técnico" value={diagnosis.technicalDiagnosis ?? ""} onChangeText={(technicalDiagnosis) => setDiagnosis((value) => ({ ...value, technicalDiagnosis }))} multiline placeholder="Conclusão técnica" />
+        </CollapsibleSection>
+        <CollapsibleSection title="Serviços executados" state={services.length ? "complete" : "pending"} initiallyOpen>
+          <SelectItens itens={services} setItens={setServices} dataTable="services" selectorLabel="Serviços realizados:" modalTitle="Serviços" />
+        </CollapsibleSection>
+        <CollapsibleSection title="Verificações técnicas" state={checks.some((item) => item.status === "attention" || item.status === "non_conforming") ? "attention" : checks.some((item) => item.status !== "not_checked") ? "complete" : "pending"}>
+          <TechnicalChecksEditor checks={checks} onChange={setChecks} />
+        </CollapsibleSection>
+        <CollapsibleSection title="Medições" state={measurements.length ? "complete" : "pending"}>
+          <MeasurementsEditor measurements={measurements} onChange={(items) => setMeasurements(withCalculatedDeltaT(items))} />
+        </CollapsibleSection>
+        <CollapsibleSection title="Peças e materiais" state={parts.length ? "complete" : "pending"}>
+          <SelectItens itens={parts} setItens={setParts} dataTable="parts" selectorLabel="Materiais utilizados:" modalTitle="Peças e materiais" />
+        </CollapsibleSection>
+        <CollapsibleSection title="Resultado" state={result.equipmentStatus ? result.equipmentStatus === "operational_with_notes" || result.equipmentStatus === "requires_repair" || result.equipmentStatus === "out_of_service" ? "attention" : "complete" : "pending"}>
+          <InfoText>Status do equipamento</InfoText>
+          <ChoiceChips value={result.equipmentStatus} onChange={(equipmentStatus) => setResult((value) => ({ ...value, equipmentStatus }))} options={[{ value: "operational", label: "✓ Operacional" }, { value: "operational_with_notes", label: "⚠ Com ressalvas", tone: "warning" }, { value: "requires_repair", label: "✕ Requer reparo", tone: "danger" }, { value: "out_of_service", label: "✕ Fora de operação", tone: "danger" }]} />
+          <InfoText>Problema resolvido</InfoText>
+          <ChoiceChips value={result.problemResolved} onChange={(problemResolved) => setResult((value) => ({ ...value, problemResolved }))} options={[{ value: "yes", label: "Sim" }, { value: "partial", label: "Parcialmente", tone: "warning" }, { value: "no", label: "Não", tone: "danger" }]} />
+          <InfoText>Retorno necessário</InfoText>
+          <ChoiceChips value={result.returnRequired === undefined ? undefined : result.returnRequired ? "yes" : "no"} onChange={(value) => setResult((current) => ({ ...current, returnRequired: value === "yes", returnReason: value === "no" ? "" : current.returnReason }))} options={[{ value: "no", label: "Não" }, { value: "yes", label: "Sim", tone: "warning" }]} />
+          {result.returnRequired ? <FormField label="Motivo do retorno" value={result.returnReason ?? ""} onChangeText={(returnReason) => setResult((value) => ({ ...value, returnReason }))} multiline /> : null}
+          <FormField label="Recomendação ao cliente (opcional)" value={result.customerRecommendation ?? ""} onChangeText={(customerRecommendation) => setResult((value) => ({ ...value, customerRecommendation }))} multiline />
+          {result.customerRecommendation ? <><InfoText>Prioridade</InfoText><ChoiceChips value={result.recommendationPriority} onChange={(recommendationPriority) => setResult((value) => ({ ...value, recommendationPriority }))} options={[{ value: "low", label: "Baixa" }, { value: "normal", label: "Normal" }, { value: "high", label: "Alta", tone: "warning" }, { value: "urgent", label: "Urgente", tone: "danger" }]} /></> : null}
+        </CollapsibleSection>
+        <CollapsibleSection title="Observações técnicas" state={comments ? "complete" : "pending"}>
+          <TextArea multiline numberOfLines={4} onChangeText={setComments} value={comments} placeholder="Opcional" />
+        </CollapsibleSection>
+        <CollapsibleSection title="Valores e próxima manutenção" state="complete">
+          <EntriesArea><Side><Input value={discount} label="Descontos:" placeholder="R$ 0,00" keyboardType="numeric" onChangeText={setDiscount} type="money" rawValue={discountRaw} /></Side><Side><Input value={increment} label="Acréscimos" placeholder="R$ 0,00" keyboardType="numeric" onChangeText={setIncrement} type="money" rawValue={incrementRaw} /></Side></EntriesArea>
+          <CheckBox title="Recomendar próxima manutenção" checked={notification} setChecked={setNotification} />
+          {notification ? <FormField label="Prazo para a próxima manutenção (dias)" value={reminderDays} onChangeText={(value) => { setReminderDays(value.replace(/\D/g, "")); setReminderError(""); }} keyboardType="number-pad" placeholder="30, 60, 90, 180..." error={reminderError} required /> : null}
+        </CollapsibleSection>
+        <CollapsibleSection title="Assinaturas" state={technicianSignatureSvg || customerSignatureSvg ? "complete" : "pending"}>
+          <SignaturePad label={`Responsável técnico${session?.user.name ? `: ${session.user.name}` : ""}`} value={technicianSignatureSvg} onChange={setTechnicianSignatureSvg} />
+          <FormField label="Nome do cliente / responsável" value={customerSignerName} onChangeText={setCustomerSignerName} placeholder="Opcional" />
+          <SignaturePad label="Cliente / responsável" value={customerSignatureSvg} onChange={setCustomerSignatureSvg} />
+        </CollapsibleSection>
         <TotalArea>
           <TotalLabel>TOTAL:</TotalLabel>
           <TotalValue>R$ {total.toFixed(2).replace(".", ",")}</TotalValue>

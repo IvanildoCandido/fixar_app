@@ -30,7 +30,7 @@ export const ItensSelect = ({
     if (itensSelected.find((item) => item.id === id)) {
       setItensSelected(itensSelected.filter((item) => item.id !== id));
     } else {
-      setItensSelected([...itensSelected, { id, name, description, price }]);
+      setItensSelected([...itensSelected, { id, name, description, price, quantity: 1 }]);
     }
   };
   return (

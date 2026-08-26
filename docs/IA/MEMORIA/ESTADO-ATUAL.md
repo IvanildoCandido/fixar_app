@@ -33,11 +33,15 @@ Este documento descreve o worktree observado, não produção.
 - Relatórios de manutenção, consolidados e orçamentos usam identidade visual da organização ativa, sem dados da empresa-modelo. Owners/admins podem editar dados empresariais e carregar a logomarca da galeria; o bucket público `organization-logos` limita imagens a 2 MB e grava arquivos em caminhos isolados por organização.
 - Cabeçalhos dos documentos A4 usam hierarquia própria para logo, identidade e dados empresariais rotulados. Telas com entrada de texto compartilham proteção de teclado com viewport ajustável, rolagem interativa e espaço inferior seguro, incluindo autenticação, onboarding, perfil empresarial, formulários modais, ordens, orçamentos e seletores.
 - Manutenções individuais e em lote permitem definir o prazo do próximo atendimento em dias. O vencimento e o usuário responsável são persistidos na ordem, a Home lista até cinco lembretes do usuário autenticado e o dispositivo agenda uma notificação local para a data escolhida. A migration `20260826120000_work_order_reminders.sql` foi aplicada e validada no projeto Supabase de desenvolvimento.
+- Manutenções individuais possuem preenchimento técnico progressivo por seções recolhíveis: diagnóstico, serviços, checklist dinâmico, medições com ΔT calculado, materiais com quantidade, resultado, recomendações, observações, valores, próxima manutenção e assinaturas desenhadas.
+- Características técnicas reutilizáveis passaram a pertencer ao equipamento; verificações, medições, diagnóstico, resultado e assinaturas são persistidos de forma estruturada na ordem. A migration `20260826180000_technical_maintenance.sql` foi aplicada e validada no Supabase de desenvolvimento.
+- Relatório individual, consolidado de múltiplas manutenções e orçamento compartilham o mesmo layout A4 baseado na referência visual, com cabeçalho, cards, assinaturas, faixa institucional e rodapé padronizados; quatro fixtures foram verificadas em uma página e inspecionadas visualmente.
+- A abertura de nova ordem não depende mais da montagem prévia dos campos monetários; o cálculo aceita refs ainda nulas e valores formatados em pt-BR.
 
 ## Limitações da descoberta
 
 - O estado remoto foi verificado após as migrations, mas depende do serviço externo; os contratos versionados estão em `supabase/migrations/`.
-- Não há testes automatizados nem CI visíveis para caracterizar o comportamento atual.
+- Há testes automatizados locais para cálculos e composição dinâmica do relatório técnico; CI ainda não foi configurada.
 - O gerenciador de pacotes canônico é npm; `package-lock.json` é o único lockfile mantido.
 - Convites, troca entre múltiplas organizações, upload de anexos e matriz detalhada de permissões ainda precisam ser implementados no aplicativo.
 - A migração visual é incremental: telas operacionais ainda usam componentes legados; estados de sync são apenas componentes visuais até existir uma fonte real de sincronização/offline.

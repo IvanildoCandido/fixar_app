@@ -3,7 +3,7 @@ import { SetStateAction, useState } from "react";
 import moment from "moment";
 import { shareAsync } from "expo-sharing";
 import * as Print from "expo-print";
-import { generateHtml } from "../../components/ReportModels/SinglePDF";
+import { generateMaintenanceHtml } from "../../components/ReportModels/SinglePDF";
 
 import {
   Container,
@@ -27,6 +27,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { loadReportCompany } from "../../services/reportCompany";
 
 interface Props {
+  repair: import("../../types/data").Repair;
   reload: boolean;
   setReload: React.Dispatch<SetStateAction<boolean>>;
   id: string;
@@ -41,6 +42,7 @@ interface Props {
 }
 
 export const RepairItem = ({
+  repair,
   reload,
   setReload,
   id,
@@ -97,7 +99,7 @@ export const RepairItem = ({
     try {
       if (!session) throw new Error("Empresa ativa não encontrada.");
       const company = await loadReportCompany(session.organization);
-      const html = generateHtml(customer, device, parts, services, comments, total, date, company, session.user.name);
+      const html = generateMaintenanceHtml({ ...repair, technicianName: repair.technicianName || session.user.name }, company);
       await printToFile(html);
     } catch (error) {
       Alert.alert("Relatório não gerado", error instanceof Error ? error.message : "Tente novamente.");

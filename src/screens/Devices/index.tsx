@@ -20,6 +20,13 @@ export interface DeviceProps {
   model: string;
   brand: string;
   location: string;
+  equipmentType?: string;
+  serialNumber?: string;
+  capacityBtu?: number | null;
+  voltage?: number | null;
+  phase?: "single" | "two" | "three" | "other" | null;
+  refrigerant?: string;
+  installedAt?: string | null;
 }
 export const defaultData: DeviceProps = {
   Customer: defaultCustomer,

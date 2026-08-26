@@ -28,6 +28,7 @@ import { SelectMultiDevices } from "../../components/Form/SelectMultiDevices";
 import { FormField } from "../../design-system";
 import { useAuth } from "../../auth/AuthContext";
 import { calculateReminderDueDate, scheduleMaintenanceReminder } from "../../services/maintenanceReminders";
+import { maskedMoneyValue } from "../../domain/technicalMaintenance";
 
 export const MultiRepair = () => {
   const [selectedCustomer, setSelectedCustomer] =
@@ -61,8 +62,8 @@ export const MultiRepair = () => {
     setTotal(
       totalServices +
         totalParts +
-        parseFloat(incrementRaw?.current.getRawValue()) -
-        parseFloat(discountRaw?.current.getRawValue())
+        maskedMoneyValue(incrementRaw, increment) -
+        maskedMoneyValue(discountRaw, discount)
     );
   }, [parts, services, increment, discount]);
 

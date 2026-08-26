@@ -133,6 +133,7 @@ export const FinishedServices = () => {
               data={repairs}
               renderItem={({ item }: { item: Repair }) => (
                 <RepairItem
+                  repair={item}
                   reload={reload}
                   setReload={setReload}
                   id={item.id}

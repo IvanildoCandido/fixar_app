@@ -8,7 +8,7 @@ Evoluir o Fixar para um produto multiempresa e multiusuário, com possibilidade 
 
 ## Sequência proposta
 
-1. Validar Home e notificação local em dispositivo físico, incluindo permissão negada e fluxos em lote.
+1. Validar em dispositivo físico o novo formulário técnico, captura de assinaturas, geração/compartilhamento do PDF, Home e notificação local, incluindo permissão negada e fluxos em lote.
 2. Confirmar se lembretes precisam de push remoto para aparelhos diferentes; em caso positivo, definir atribuição do técnico, ciclo do token, emissor backend e política de reenvio.
 3. Concluir a migração dos seletores de equipamentos/peças/serviços e dos fluxos de orçamento/ordem para `PickerModal`, seguida de validação visual light/dark.
 4. Definir a matriz detalhada de permissões de `technician` e `viewer`.

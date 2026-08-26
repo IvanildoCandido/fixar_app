@@ -13,17 +13,28 @@ export interface Device {
   model: string;
   brand: string;
   location: string;
+  equipmentType?: string;
+  serialNumber?: string;
+  capacityBtu?: number | null;
+  voltage?: number | null;
+  phase?: "single" | "two" | "three" | "other" | null;
+  refrigerant?: string;
+  installedAt?: string | null;
 }
 export interface Part {
   id: string;
   name: string;
   price: number;
+  quantity?: number;
+  total?: number;
 }
 export interface Service {
   id: string;
   name: string;
   description: string;
   price: number;
+  quantity?: number;
+  total?: number;
 }
 export interface Repair {
   id: string;
@@ -34,7 +45,25 @@ export interface Repair {
   parts: Part[];
   services: Service[];
   total: string;
+  diagnosis?: MaintenanceDiagnosis;
+  checks?: TechnicalCheck[];
+  measurements?: TechnicalMeasurement[];
+  result?: MaintenanceResult;
+  technicianName?: string;
+  customerSignerName?: string;
+  technicianSignatureSvg?: string;
+  customerSignatureSvg?: string;
+  signedAt?: string;
 }
+
+export type TechnicalCheckStatus = "ok" | "attention" | "non_conforming" | "not_checked" | "not_applicable";
+export interface TechnicalCheck { key: string; label: string; category?: string; status: TechnicalCheckStatus; observation?: string; order: number; }
+export interface TechnicalMeasurement { key: string; label: string; value: number; unit: string; source?: "manual" | "calculated"; order: number; }
+export interface MaintenanceDiagnosis { reportedProblem?: string; foundCondition?: string; technicalDiagnosis?: string; }
+export type EquipmentStatus = "operational" | "operational_with_notes" | "requires_repair" | "out_of_service";
+export type ProblemResolution = "yes" | "partial" | "no";
+export type RecommendationPriority = "low" | "normal" | "high" | "urgent";
+export interface MaintenanceResult { equipmentStatus?: EquipmentStatus; problemResolved?: ProblemResolution; returnRequired?: boolean; returnReason?: string; customerRecommendation?: string; recommendationPriority?: RecommendationPriority; }
 
 export interface MaintenanceReminder {
   id: string;

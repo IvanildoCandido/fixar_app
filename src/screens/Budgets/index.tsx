@@ -31,6 +31,7 @@ import { shareAsync } from "expo-sharing";
 import { generateBudgetsHtml } from "../../components/ReportModels/Budgets";
 import { useAuth } from "../../auth/AuthContext";
 import { loadReportCompany } from "../../services/reportCompany";
+import { maskedMoneyValue } from "../../domain/technicalMaintenance";
 export interface servicesTotal {
   id: string;
   qtd: number;
@@ -68,8 +69,8 @@ export const Budgets = () => {
     setTotal(
       totalServices +
         totalParts +
-        parseFloat(incrementRaw?.current.getRawValue()) -
-        parseFloat(discountRaw?.current.getRawValue())
+        maskedMoneyValue(incrementRaw, increment) -
+        maskedMoneyValue(discountRaw, discount)
     );
   }, [servicesSelected, partsSelected, increment, discount]);
 

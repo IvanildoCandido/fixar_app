@@ -34,3 +34,8 @@ export const LabelArea = styled.View`
 export const CountBadge = styled.View`min-width: 24px; height: 24px; padding: 0 7px; align-items: center; justify-content: center; border-radius: ${({ theme }) => theme.radii.pill}px; background-color: ${({ theme }) => theme.colors.secondary}; margin-left: auto; margin-right: 4px;`;
 export const CountText = styled.Text`font-family: ${({ theme }) => theme.fonts.semibold}; font-size: ${({ theme }) => theme.typography.caption.size}px; color: ${({ theme }) => theme.colors.secondaryForeground};`;
 export const ActionButton = styled.TouchableOpacity`width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: ${({ theme }) => theme.radii.md}px; background-color: ${({ theme }) => theme.colors.secondary};`;
+export const SelectedRow = styled.View`min-height: 42px; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px;`;
+export const QuantityControl = styled.View`flex-direction: row; align-items: center; gap: 4px;`;
+export const QuantityButton = styled.Pressable`width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: ${({ theme }) => theme.radii.md}px; background-color: ${({ theme }) => theme.colors.secondary};`;
+export const QuantityText = styled.Text`font-family: ${({ theme }) => theme.fonts.semibold}; font-size: ${({ theme }) => theme.typography.heading.size}px; color: ${({ theme }) => theme.colors.secondaryForeground};`;
+export const QuantityValue = styled.Text`min-width: 24px; text-align: center; font-family: ${({ theme }) => theme.fonts.semibold}; font-size: ${({ theme }) => theme.typography.body.size}px; color: ${({ theme }) => theme.colors.foreground};`;

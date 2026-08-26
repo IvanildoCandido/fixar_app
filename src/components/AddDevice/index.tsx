@@ -20,6 +20,7 @@ import { Customer, Device } from "../../types/data";
 import { defaultCustomer } from "../../utils/dafaultValues";
 import API from "../../services/API";
 import { ScannerQR } from "../ScannerQR";
+import { ChoiceChips, CollapsibleSection } from "../TechnicalMaintenance";
 
 interface ModalProps {
   closeModal: React.Dispatch<SetStateAction<boolean>>;
@@ -31,6 +32,11 @@ interface DeviceForm {
   model?: string;
   brand?: string;
   location: string;
+  equipmentType?: string;
+  serialNumber?: string;
+  capacityBtu?: string;
+  refrigerant?: string;
+  installedAt?: string;
 }
 
 const schema = Yup.object().shape({
@@ -45,6 +51,8 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
   const [selected, setSelected] = useState<Customer>(defaultCustomer);
   const [QRcode, setQRCode] = useState(false);
   const [reference, setReference] = useState("");
+  const [voltage, setVoltage] = useState<number | undefined>(dataEdit.voltage ?? undefined);
+  const [phase, setPhase] = useState<Device["phase"]>(dataEdit.phase ?? undefined);
 
   const handleQRcode = (data: string): void => {
     setReference(data);
@@ -73,6 +81,13 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
       model: form.model,
       brand: form.brand,
       location: form.location,
+      equipmentType: form.equipmentType,
+      serialNumber: form.serialNumber,
+      capacityBtu: form.capacityBtu ? Number(form.capacityBtu) : null,
+      voltage: voltage ?? null,
+      phase: phase ?? null,
+      refrigerant: form.refrigerant,
+      installedAt: form.installedAt || null,
     };
     try {
       if (dataEdit.id !== "") {
@@ -115,6 +130,11 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
       model: dataEdit.model,
       brand: dataEdit.brand,
       location: dataEdit.location,
+      equipmentType: dataEdit.equipmentType,
+      serialNumber: dataEdit.serialNumber,
+      capacityBtu: dataEdit.capacityBtu ? String(dataEdit.capacityBtu) : "",
+      refrigerant: dataEdit.refrigerant,
+      installedAt: dataEdit.installedAt ?? "",
     },
   });
   return (
@@ -128,6 +148,15 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
             <InputForm control={control} name="model" label="Modelo" placeholder="Ex.: Split Inverter 12.000 BTU" autoCapitalize="words" error={errors.model?.message} type={"custom"} options={{ mask: "*********************************" }} />
             <InputForm control={control} name="brand" label="Marca" placeholder="Ex.: LG" autoCapitalize="words" error={errors.brand?.message} type={"custom"} options={{ mask: "*********************************" }} />
             <InputForm control={control} name="location" label="Ambiente *" placeholder="Ex.: Sala principal" autoCapitalize="words" error={errors.location?.message} type={"custom"} options={{ mask: "*********************************" }} />
+            <CollapsibleSection title="Características técnicas" state={dataEdit.equipmentType || dataEdit.serialNumber || dataEdit.capacityBtu ? "complete" : "pending"}>
+              <InputForm control={control} name="equipmentType" label="Tipo" placeholder="Ex.: Ar-condicionado split" autoCapitalize="words" type={"custom"} options={{ mask: "*********************************" }} />
+              <InputForm control={control} name="serialNumber" label="Número de série" placeholder="Opcional" autoCapitalize="characters" type={"custom"} options={{ mask: "*********************************" }} />
+              <InputForm control={control} name="capacityBtu" label="Capacidade (BTU/h)" placeholder="Ex.: 18000" keyboardType="number-pad" type={"custom"} options={{ mask: "999999" }} />
+              <ChoiceChips value={voltage ? String(voltage) : undefined} onChange={(value) => setVoltage(Number(value))} options={[{ value: "127", label: "127 V" }, { value: "220", label: "220 V" }, { value: "380", label: "380 V" }]} />
+              <ChoiceChips value={phase ?? undefined} onChange={setPhase} options={[{ value: "single", label: "Monofásico" }, { value: "two", label: "Bifásico" }, { value: "three", label: "Trifásico" }, { value: "other", label: "Outro" }]} />
+              <InputForm control={control} name="refrigerant" label="Refrigerante" placeholder="Ex.: R-410A" autoCapitalize="characters" type={"custom"} options={{ mask: "****************" }} />
+              <InputForm control={control} name="installedAt" label="Data de instalação" placeholder="AAAA-MM-DD" keyboardType="numbers-and-punctuation" type={"custom"} options={{ mask: "9999-99-99" }} />
+            </CollapsibleSection>
       </FormModal>
       {QRcode && <Modal visible animationType="slide"><ScannerQR closeModal={setQRCode} handleQRcode={handleQRcode} /></Modal>}
     </>

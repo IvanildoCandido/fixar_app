@@ -3,6 +3,8 @@
   "version": "2.0.1",
   "main": "index.js",
   "scripts": {
+    "test": "tsx --test tests/**/*.test.ts",
+    "report:fixtures": "tsx scripts/generate-maintenance-fixtures.ts",
     "start": "npx expo start",
     "build": "npx eas-cli@latest build --platform ios --clear-cache",
     "submit": "npx eas-cli@latest  submit",
@@ -55,7 +57,10 @@
     "@babel/core": "^7.20.0",
     "@types/react": "~19.1.10",
     "@types/react-native-calendars": "^1.1264.3",
+    "pdf-lib": "^1.17.1",
+    "playwright": "^1.62.1",
     "react-native-svg-transformer": "^1.0.0",
+    "tsx": "^4.23.12",
     "typescript": "~5.9.2"
   },
   "expo": {

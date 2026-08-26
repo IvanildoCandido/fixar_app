@@ -36,6 +36,13 @@ function mapDevice(row: any) {
     model: row.model ?? "",
     brand: row.brand ?? "",
     location: row.location,
+    equipmentType: row.equipment_type ?? "",
+    serialNumber: row.serial_number ?? "",
+    capacityBtu: row.capacity_btu ?? null,
+    voltage: row.voltage ?? null,
+    phase: row.phase ?? null,
+    refrigerant: row.refrigerant ?? "",
+    installedAt: row.installed_at ?? null,
     Customer: mapCustomer(row.Customer ?? row.customers ?? {}),
   };
 }
@@ -46,6 +53,8 @@ function mapCatalogItem(row: any) {
     name: row.name,
     description: row.description ?? "",
     price: Number(row.unit_price),
+    quantity: Number(row.quantity ?? 1),
+    total: Number(row.total ?? row.unit_price ?? 0),
   };
 }
 
@@ -60,6 +69,32 @@ function mapRepair(row: any) {
     parts: items.filter((item: any) => item.kind === "part").map(mapCatalogItem),
     services: items.filter((item: any) => item.kind === "service").map(mapCatalogItem),
     total: String(row.total),
+    diagnosis: {
+      reportedProblem: row.reported_problem ?? "",
+      foundCondition: row.found_condition ?? "",
+      technicalDiagnosis: row.technical_diagnosis ?? "",
+    },
+    checks: (row.work_order_technical_checks ?? []).map((item: any) => ({
+      key: item.key, label: item.label, category: item.category ?? "",
+      status: item.status, observation: item.observation ?? "", order: item.sort_order,
+    })),
+    measurements: (row.work_order_measurements ?? []).map((item: any) => ({
+      key: item.key, label: item.label, value: Number(item.value), unit: item.unit,
+      source: item.source, order: item.sort_order,
+    })),
+    result: {
+      equipmentStatus: row.equipment_status ?? undefined,
+      problemResolved: row.problem_resolved ?? undefined,
+      returnRequired: row.return_required ?? undefined,
+      returnReason: row.return_reason ?? "",
+      customerRecommendation: row.customer_recommendation ?? "",
+      recommendationPriority: row.recommendation_priority ?? undefined,
+    },
+    technicianName: row.technician_name ?? "",
+    customerSignerName: row.customer_signer_name ?? "",
+    technicianSignatureSvg: row.technician_signature_svg ?? "",
+    customerSignatureSvg: row.customer_signature_svg ?? "",
+    signedAt: row.signed_at ?? undefined,
   };
 }
 
@@ -94,7 +129,7 @@ async function listCatalog(kind: "part" | "service") {
 
 async function listRepairs() {
   const result = await supabase.from("work_orders")
-    .select("*, Customer:customers(*), Device:assets(*), work_order_items(*)")
+    .select("*, Customer:customers(*), Device:assets(*), work_order_items(*), work_order_technical_checks(*), work_order_measurements(*)")
     .eq("organization_id", requireOrganization()).is("deleted_at", null)
     .order("completed_at", { ascending: false, nullsFirst: false });
   return unwrap<any[]>(result as any).map(mapRepair);
@@ -122,7 +157,7 @@ async function createRepair(payload: any) {
   const services = payload.services ?? [];
   const parts = payload.parts ?? [];
   const subtotal = [...services, ...parts].reduce(
-    (sum, item) => sum + Number(item.price ?? 0), 0
+    (sum, item) => sum + Number(item.quantity ?? 1) * Number(item.price ?? 0), 0
   );
   const order = unwrap<any>((await supabase.from("work_orders").insert({
     organization_id: organizationId,
@@ -137,6 +172,20 @@ async function createRepair(payload: any) {
     reminder_enabled: Boolean(payload.reminderEnabled),
     reminder_interval_days: payload.reminderIntervalDays ?? null,
     reminder_due_at: payload.reminderDueAt ?? null,
+    reported_problem: payload.diagnosis?.reportedProblem || null,
+    found_condition: payload.diagnosis?.foundCondition || null,
+    technical_diagnosis: payload.diagnosis?.technicalDiagnosis || null,
+    equipment_status: payload.result?.equipmentStatus ?? null,
+    problem_resolved: payload.result?.problemResolved ?? null,
+    return_required: payload.result?.returnRequired ?? null,
+    return_reason: payload.result?.returnReason || null,
+    customer_recommendation: payload.result?.customerRecommendation || null,
+    recommendation_priority: payload.result?.recommendationPriority ?? null,
+    technician_name: payload.technicianName || null,
+    customer_signer_name: payload.customerSignerName || null,
+    technician_signature_svg: payload.technicianSignatureSvg || null,
+    customer_signature_svg: payload.customerSignatureSvg || null,
+    signed_at: payload.signedAt ?? null,
   }).select("id").single()) as any);
 
   const items = [
@@ -149,11 +198,32 @@ async function createRepair(payload: any) {
     kind: item.kind,
     name: item.name,
     description: item.description || null,
-    quantity: 1,
+    quantity: Number(item.quantity ?? 1),
     unit_price: Number(item.price ?? 0),
   }));
   if (items.length) {
     const result = await supabase.from("work_order_items").insert(items);
+    if (result.error) {
+      await supabase.from("work_orders").delete().eq("id", order.id);
+      throw result.error;
+    }
+  }
+  const checks = (payload.checks ?? []).map((item: any) => ({
+    organization_id: organizationId, work_order_id: order.id, key: item.key,
+    label: item.label, category: item.category || null, status: item.status,
+    observation: item.observation || null, sort_order: item.order ?? 0,
+  }));
+  const measurements = (payload.measurements ?? []).map((item: any) => ({
+    organization_id: organizationId, work_order_id: order.id, key: item.key,
+    label: item.label, value: Number(item.value), unit: item.unit,
+    source: item.source ?? "manual", sort_order: item.order ?? 0,
+  }));
+  for (const [table, rows] of [
+    ["work_order_technical_checks", checks],
+    ["work_order_measurements", measurements],
+  ] as const) {
+    if (!rows.length) continue;
+    const result = await supabase.from(table).insert(rows as any);
     if (result.error) {
       await supabase.from("work_orders").delete().eq("id", order.id);
       throw result.error;
@@ -231,6 +301,13 @@ const API = {
         model: payload.model || null,
         brand: payload.brand || null,
         location: payload.location,
+        equipment_type: payload.equipmentType || null,
+        serial_number: payload.serialNumber || null,
+        capacity_btu: payload.capacityBtu || null,
+        voltage: payload.voltage || null,
+        phase: payload.phase || null,
+        refrigerant: payload.refrigerant || null,
+        installed_at: payload.installedAt || null,
       }).select().single();
       return { data: unwrap(result as any) };
     }
@@ -271,6 +348,13 @@ const API = {
         model: payload.model || null,
         brand: payload.brand || null,
         location: payload.location,
+        equipment_type: payload.equipmentType || null,
+        serial_number: payload.serialNumber || null,
+        capacity_btu: payload.capacityBtu || null,
+        voltage: payload.voltage || null,
+        phase: payload.phase || null,
+        refrigerant: payload.refrigerant || null,
+        installed_at: payload.installedAt || null,
       }).eq("organization_id", organizationId).eq("id", id)) as any);
       return { data: true };
     }

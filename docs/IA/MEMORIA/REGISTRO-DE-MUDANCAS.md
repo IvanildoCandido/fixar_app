@@ -70,3 +70,18 @@ Este registro complementa, mas não substitui, o histórico Git.
 - Substituído na listagem de clientes o ícone genérico de manutenção pelo mesmo ícone usado na aba de equipamentos.
 - A seleção de um equipamento vinculado ao cliente agora abre uma nova manutenção com cliente e equipamento previamente selecionados.
 - Typecheck e export do bundle iOS aprovados.
+
+## 2026-08-26 — Manutenção técnica estruturada e relatório A4
+
+- Aplicada no Supabase de desenvolvimento a migration `20260826180000_technical_maintenance.sql`, com características técnicas do equipamento, dados de diagnóstico/resultado/assinaturas, templates e tabelas extensíveis de verificações e medições protegidas por RLS.
+- A manutenção individual passou a usar seções recolhíveis, checklist rápido e contextual, observações condicionais, medições com unidade e ΔT calculado, quantidades de materiais, resultado, recomendação e assinaturas desenhadas.
+- O relatório individual foi reconstruído em cards A4 dinâmicos, sem fotos ou QR público, ocultando seções opcionais vazias e preservando uma página nos cenários simples e completo de teste.
+- Adicionadas fixtures do SC-0101 e de manutenção completa fictícia, testes automatizados, geração de PDFs e inspeção visual renderizada.
+- Typecheck, cinco testes, dois PDFs de uma página e export do bundle iOS aprovados.
+
+## 2026-08-26 — Correção de nova ordem e padronização dos relatórios
+
+- Corrigida a falha de renderização ao abrir uma nova ordem antes da montagem dos campos monetários, incluindo valores em formato brasileiro.
+- Unificados relatório individual, consolidado de múltiplas manutenções e orçamento em um mesmo layout A4 baseado no modelo visual fornecido, preservando as diferenças de conteúdo de cada documento.
+- Adicionados testes de regressão do cálculo inicial e do contrato visual comum aos três modelos.
+- Typecheck, sete testes, export iOS e quatro PDFs de uma página foram aprovados; os quatro renders foram inspecionados visualmente sem cortes ou sobreposição.
