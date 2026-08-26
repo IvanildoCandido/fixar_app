@@ -9,7 +9,7 @@ Este documento descreve o worktree observado, não produção.
 ## Trabalho ativo
 
 - Framework documental de engenharia assistida por IA instalado e personalizado no worktree.
-- Projeto copiado para uma nova raiz como `Fixar`, com repositório Git independente na branch `main`, sem remoto.
+- Projeto copiado para uma nova raiz como `Fixar`, com repositório Git independente na branch `main` e remoto `origin` configurado para o repositório `IvanildoCandido/fixar_app` no GitHub.
 - Versão declarada do aplicativo: `2.0.1` (`package.json` e `app.json`); runtime atualizado para Expo SDK 54, React Native 0.81 e React 19.1.
 - Supabase Auth integrado com cadastro, login, confirmação de e-mail, sessão em armazenamento seguro nativo, onboarding de organização/owner e logout.
 - Estratégia de backend definida em `docs/ARQUITETURA-SAAS.md`: PostgreSQL, autenticação gerenciada, isolamento por `organization_id`, RLS e API versionada.

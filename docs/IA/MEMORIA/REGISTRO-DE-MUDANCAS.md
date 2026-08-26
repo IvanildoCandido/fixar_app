@@ -59,3 +59,8 @@ Este registro complementa, mas não substitui, o histórico Git.
 - Confirmadas as colunas opcionais `reminder_interval_days` e `reminder_due_at` em `public.work_orders`.
 - Confirmados o check de intervalo positivo e o índice parcial de lembretes por responsável e vencimento.
 - Nenhum seed, deploy, publicação ou commit foi executado.
+
+## 2026-08-26 — Configuração do remoto Git
+
+- Configurado o remoto `origin` para o repositório `IvanildoCandido/fixar_app` no GitHub via SSH.
+- Nenhum fetch, push, publicação ou commit foi executado.
