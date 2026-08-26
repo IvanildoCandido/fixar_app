@@ -1,11 +1,11 @@
 import moment from "moment";
 import { MaintenanceDiagnosis, MaintenanceResult, Part, Repair, Service, TechnicalCheck, TechnicalMeasurement } from "../../types/data";
-import { escapeHtml, referenceReportDocument, ReportOrganization } from "./reportDocument";
+import { escapeHtml, referenceReportDocument, reportIcon, ReportOrganization } from "./reportDocument";
 
 const money = (value: string | number) => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const present = (value?: string | null) => value?.trim() ? escapeHtml(value) : "Não informado";
 const field = (label: string, value?: string | number | null) => value === undefined || value === null || String(value).trim() === "" ? "" : `<div class="report-field"><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></div>`;
-const section = (title: string, icon: string, content: string, extra = "") => content.trim() ? `<section class="report-card ${extra}"><h3><span>${icon}</span>${escapeHtml(title)}</h3>${content}</section>` : "";
+const section = (title: string, icon: string, content: string, extra = "") => content.trim() ? `<section class="report-card ${extra}"><h3>${reportIcon(icon)}${escapeHtml(title)}</h3>${content}</section>` : "";
 const statusLabels: Record<string, string> = { ok: "OK", attention: "Atenção", non_conforming: "Não conforme", not_checked: "Não verificado", not_applicable: "Não aplicável" };
 const resultLabels: Record<string, string> = { operational: "Operacional", operational_with_notes: "Operacional com ressalvas", requires_repair: "Requer reparo", out_of_service: "Fora de operação", yes: "Sim", partial: "Parcialmente", no: "Não", low: "Baixa", normal: "Normal", high: "Alta", urgent: "Urgente" };
 
@@ -30,12 +30,12 @@ export function generateMaintenanceHtml(report: MaintenanceReportData, company: 
   const result = resultHtml(report.result);
   const phaseLabels = { single: "Monofásico", two: "Bifásico", three: "Trifásico", other: "Outro" };
   const equipmentDetails = [field("Referência / Tag", device.reference), field("Ambiente", device.location), field("Tipo", device.equipmentType), field("Marca", device.brand), field("Modelo", device.model), field("Nº de série", device.serialNumber), field("Capacidade", device.capacityBtu ? `${device.capacityBtu.toLocaleString("pt-BR")} BTU/h` : ""), field("Tensão", device.voltage ? `${device.voltage} V` : ""), field("Fase", device.phase ? phaseLabels[device.phase] : ""), field("Refrigerante", device.refrigerant), field("Data de instalação", device.installedAt ? moment(device.installedAt).format("DD/MM/YYYY") : "")].join("");
-  const optionalTechnical = section("Diagnóstico", "⌕", diagnosis, "diagnosis-card") + section("Resultado e recomendações", "✓", result, "result-card");
+  const optionalTechnical = section("Diagnóstico", "diagnosis", diagnosis, "diagnosis-card") + section("Resultado e recomendações", "check", result, "result-card");
   const body = `
-  <div class="report-two-columns">${section("Cliente", "◉", `<div class="report-field-grid">${field("Nome / Razão social", customer.name)}${field("Documento", customer.document)}${field("Telefone", customer.phone)}${field("Endereço", customer.address)}</div>`)}${section("Equipamento", "▣", `<div class="report-field-grid">${equipmentDetails}</div>`)}</div>
-  ${section("Serviços executados", "⌕", servicesHtml(report.services ?? []))}${section("Verificações e condições", "◇", technical)}
-  <div class="optional-grid">${optionalTechnical}</div><div class="closing-grid">${section("Peças e materiais utilizados", "◇", partsHtml(report.parts ?? []))}${section("Valor total dos serviços", "▣", `<div class="total-value">${money(report.total)}</div>`)}</div>
-  ${report.comments?.trim() ? section("Observações técnicas", "▤", `<div class="comments">${escapeHtml(report.comments)}</div>`) : ""}
+  <div class="report-two-columns">${section("Cliente", "client", `<div class="report-field-grid">${field("Nome / Razão social", customer.name)}${field("Documento", customer.document)}${field("Telefone", customer.phone)}${field("Endereço", customer.address)}</div>`)}${section("Equipamento", "equipment", `<div class="report-field-grid">${equipmentDetails}</div>`)}</div>
+  ${section("Serviços executados", "service", servicesHtml(report.services ?? []))}${section("Verificações e condições", "shield", technical)}
+  <div class="optional-grid">${optionalTechnical}</div><div class="closing-grid">${section("Peças e materiais utilizados", "package", partsHtml(report.parts ?? []))}${section("Valor total dos serviços", "money", `<div class="total-value">${money(report.total)}</div>`)}</div>
+  ${report.comments?.trim() ? section("Observações técnicas", "note", `<div class="comments">${escapeHtml(report.comments)}</div>`) : ""}
   <section class="report-card"><div class="report-signatures"><div class="report-signature">${signatureImage(report.technicianSignatureSvg)}<div class="report-signature-line"><b>${present(report.technicianName)}</b><small>Responsável técnico</small></div></div><div class="report-signature">${signatureImage(report.customerSignatureSvg)}<div class="report-signature-line"><b>${present(report.customerSignerName)}</b><small>Cliente / responsável</small></div></div></div></section>`;
   return referenceReportDocument(company, {
     documentTitle: "MANUTENÇÃO", documentLabel: "RELATÓRIO DE", reference: device.reference || report.id,
