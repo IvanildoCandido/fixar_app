@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Fixar",
+    "slug": "fixar",
+    "version": "2.0.1",
+    "scheme": "fixar",
+    "runtimeVersion": "2.0.1",
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_ERROR_RECOVERY",
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#176B4D"
+    },
+    "android": {
+      "package": "app.fixar.mobile",
+      "versionCode": 18
+    },
+    "ios": {
+      "bundleIdentifier": "app.fixar.mobile",
+      "buildNumber": "3"
+    },
+    "plugins": [
+      "./plugins/withFmtXcode26Fix",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permita que $(PRODUCT_NAME) acesse sua câmera para escanear códigos de barra.",
+          "microphonePermission": "Permita que $(PRODUCT_NAME) acesse seu microfone."
+        }
+      ],
+      "expo-secure-store",
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permita que $(PRODUCT_NAME) acesse suas fotos para selecionar a logomarca da empresa.",
+          "cameraPermission": false
+        }
+      ]
+    ]
+  }
+}

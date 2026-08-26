@@ -1,0 +1,1 @@
+export { ListCard as Container, ListTitle as CustomerName, ListMeta as CustomerPhone, ListActions as IconsArea, ListContent as InfoArea, IconAction as TouchAction, InlineMeta as StatsArea, ListMeta as StatsCaption, CountBadge as CountDevices } from "../../design-system/listStyles";

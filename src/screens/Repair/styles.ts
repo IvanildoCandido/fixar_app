@@ -1,0 +1,1 @@
+export { OperationalContainer as Container, OperationalContent as ContentArea, InfoText, TextArea, EntriesArea, Side, TotalArea, TotalLabel, TotalValue, ButtonsArea, ScanArea, ReferenceCode, CustomerName, Label, InfoArea } from "../../design-system/operationalFormStyles";

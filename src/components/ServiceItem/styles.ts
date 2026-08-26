@@ -1,0 +1,1 @@
+export { ListCard as Container, ListTitle as ServiceName, PriceText as ServicePrice, ListActions as IconsArea, ListContent as InfoArea, IconAction as TouchAction } from "../../design-system/listStyles";

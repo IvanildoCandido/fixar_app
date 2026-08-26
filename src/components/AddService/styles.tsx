@@ -1,0 +1,3 @@
+import styled from "styled-components/native";
+export const LabelDescription = styled.Text`margin: 10px 0 7px; font-size: ${({ theme }) => theme.typography.label.size}px; font-family: ${({ theme }) => theme.fonts.medium}; color: ${({ theme }) => theme.colors.muted};`;
+export const TextArea = styled.TextInput`min-height: 92px; padding: 12px 14px; border: 1px solid ${({ theme }) => theme.colors.input}; border-radius: ${({ theme }) => theme.radii.md}px; font-size: ${({ theme }) => theme.typography.body.size}px; font-family: ${({ theme }) => theme.fonts.regular}; color: ${({ theme }) => theme.colors.foreground}; background-color: ${({ theme }) => theme.colors.surfaceMuted}; text-align-vertical: top;`;

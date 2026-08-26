@@ -1,0 +1,373 @@
+{
+  "customers": [
+    {
+      "name": "Ivanildo Cândido  Bezerra",
+      "email": "string",
+      "phone": "(83) 99815-7585",
+      "address": "Rua José",
+      "document": "12",
+      "id": "4b40f357-3f20-4148-878c-e0261c934f6d"
+    },
+    {
+      "id": "87e56a4c-9631-49c0-be5b-d21881829a48",
+      "name": "Emanuel da Silva Avelino",
+      "email": "emanuel@gmail.com",
+      "phone": "(83) 99523-6698",
+      "address": "Rua Epitacio Pessoa, 327",
+      "document": "108.555.236-97"
+    }
+  ],
+  "services": [
+    {
+      "name": "Instalação",
+      "price": 250,
+      "id": "ea83f32a-1d08-4429-9ede-8542959a13e4"
+    },
+    {
+      "id": "0dae0441-cfbf-4d42-b9c4-4e51014cb287",
+      "name": "Recarga De Gas",
+      "price": 150
+    },
+    {
+      "id": "485ffd85-8751-4471-977a-1d0f79d227b6",
+      "name": "Preventiva Petronio",
+      "price": 1000
+    }
+  ],
+  "devices": [
+    {
+      "id": "5925e028-1889-46e8-9c16-eb5186673674",
+      "customer": {
+        "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+        "name": "Ivanildo Cândido  Bezerra",
+        "address": "Rua José",
+        "email": "string",
+        "phone": "(83) 99815-7585",
+        "document": "12"
+      },
+      "reference": "SC-0002",
+      "model": "Inverter",
+      "brand": "Elgin",
+      "location": "Diretoria"
+    },
+    {
+      "id": "a172fc7f-5540-4b8d-b70d-a67b9f0e1848",
+      "customer": {
+        "id": "87e56a4c-9631-49c0-be5b-d21881829a48",
+        "name": "Emanuel da Silva Avelino",
+        "address": "Rua Epitacio Pessoa, 327",
+        "email": "emanuel@gmail.com",
+        "phone": "(83) 99523-6698",
+        "document": "108.555.236-97"
+      },
+      "reference": "SC-0005",
+      "model": "Inverter",
+      "brand": "Cônsul",
+      "location": "Sala de Recursos "
+    },
+    {
+      "id": "b72c322b-edb2-4abf-b885-dd8101715f5d",
+      "customer": {
+        "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+        "name": "Ivanildo Cândido  Bezerra",
+        "address": "Rua José",
+        "email": "string",
+        "phone": "(83) 99815-7585",
+        "document": "12"
+      },
+      "reference": "SC-0004",
+      "model": "Tradicional",
+      "brand": "Brastemp",
+      "location": "Quarto de Hóspedes"
+    }
+  ],
+  "parts": [
+    {
+      "name": "Capacitor 20uF",
+      "price": 25,
+      "id": "1bb4e39b-4c54-4f28-9e7b-0ade96ee7565"
+    }
+  ],
+  "repairs": [
+    {
+      "id": "12e09126-6451-411b-8969-0bc931d13b10",
+      "customer": {
+        "id": "87e56a4c-9631-49c0-be5b-d21881829a48",
+        "name": "Emanuel da Silva Avelino",
+        "address": "Rua Epitacio Pessoa, 327",
+        "email": "emanuel@gmail.com",
+        "phone": "(83) 99523-6698",
+        "document": "108.555.236-97"
+      },
+      "device": {
+        "id": "a172fc7f-5540-4b8d-b70d-a67b9f0e1848",
+        "customer": {
+          "id": "87e56a4c-9631-49c0-be5b-d21881829a48",
+          "name": "Emanuel da Silva Avelino",
+          "address": "Rua Epitacio Pessoa, 327",
+          "email": "emanuel@gmail.com",
+          "phone": "(83) 99523-6698",
+          "document": "108.555.236-97"
+        },
+        "reference": "SC-0005",
+        "model": "Inverter",
+        "brand": "Cônsul",
+        "location": "Sala de Recursos "
+      },
+      "services": [
+        {
+          "id": "ea83f32a-1d08-4429-9ede-8542959a13e4",
+          "name": "Instalação",
+          "price": 250
+        }
+      ],
+      "parts": [
+        {
+          "id": "1bb4e39b-4c54-4f28-9e7b-0ade96ee7565",
+          "name": "Capacitor 20uF",
+          "price": 25
+        }
+      ],
+      "comments": "Serviço bem organizado",
+      "increment": "0",
+      "discount": "R$10,00",
+      "notification": true,
+      "total": 265,
+      "date": "2023-03-14T18:02:15.026Z"
+    },
+    {
+      "id": "12e09126-6451-411b-8969-0bc931d13b12",
+      "customer": {
+        "id": "87e56a4c-9631-49c0-be5b-d21881829a48",
+        "name": "Emanuel da Silva Avelino",
+        "address": "Rua Epitacio Pessoa, 327",
+        "email": "emanuel@gmail.com",
+        "phone": "(83) 99523-6698",
+        "document": "108.555.236-97"
+      },
+      "device": {
+        "id": "a172fc7f-5540-4b8d-b70d-a67b9f0e1848",
+        "customer": {
+          "id": "87e56a4c-9631-49c0-be5b-d21881829a48",
+          "name": "Emanuel da Silva Avelino",
+          "address": "Rua Epitacio Pessoa, 327",
+          "email": "emanuel@gmail.com",
+          "phone": "(83) 99523-6698",
+          "document": "108.555.236-97"
+        },
+        "reference": "SC-0005",
+        "model": "Inverter",
+        "brand": "Cônsul",
+        "location": "Sala de Recursos "
+      },
+      "services": [
+        {
+          "id": "ea83f32a-1d08-4429-9ede-8542959a13e4",
+          "name": "Instalação",
+          "price": 250
+        }
+      ],
+      "parts": [
+        {
+          "id": "1bb4e39b-4c54-4f28-9e7b-0ade96ee7565",
+          "name": "Capacitor 20uF",
+          "price": 25
+        }
+      ],
+      "comments": "Serviço bem organizado",
+      "increment": "0",
+      "discount": "R$10,00",
+      "notification": true,
+      "total": 265,
+      "date": "2023-02-14T18:02:15.026Z"
+    },
+    {
+      "id": "ae8bbc39-fffe-463d-982c-7836663d404e",
+      "customer": {
+        "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+        "name": "Ivanildo Cândido  Bezerra",
+        "address": "Rua José",
+        "email": "string",
+        "phone": "(83) 99815-7585",
+        "document": "12"
+      },
+      "device": {
+        "id": "5925e028-1889-46e8-9c16-eb5186673674",
+        "customer": {
+          "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+          "name": "Ivanildo Cândido  Bezerra",
+          "address": "Rua José",
+          "email": "string",
+          "phone": "(83) 99815-7585",
+          "document": "12"
+        },
+        "reference": "SC-0002",
+        "model": "Inverter",
+        "brand": "Elgin",
+        "location": "Diretoria"
+      },
+      "services": [
+        {
+          "id": "ea83f32a-1d08-4429-9ede-8542959a13e4",
+          "name": "Instalação",
+          "price": 250
+        }
+      ],
+      "parts": [
+        {
+          "id": "1bb4e39b-4c54-4f28-9e7b-0ade96ee7565",
+          "name": "Capacitor 20uF",
+          "price": 25
+        }
+      ],
+      "comments": "Teste",
+      "increment": "R$5,00",
+      "discount": "R$10,00",
+      "notification": true,
+      "total": 270,
+      "date": "2023-03-16T18:14:04.429Z"
+    },
+    {
+      "id": "ae8bbc39-fffe-463d-982c-7836663d4044",
+      "customer": {
+        "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+        "name": "Ivanildo Cândido  Bezerra",
+        "address": "Rua José",
+        "email": "string",
+        "phone": "(83) 99815-7585",
+        "document": "12"
+      },
+      "device": {
+        "id": "5925e028-1889-46e8-9c16-eb5186673674",
+        "customer": {
+          "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+          "name": "Ivanildo Cândido  Bezerra",
+          "address": "Rua José",
+          "email": "string",
+          "phone": "(83) 99815-7585",
+          "document": "12"
+        },
+        "reference": "SC-0002",
+        "model": "Inverter",
+        "brand": "Elgin",
+        "location": "Diretoria"
+      },
+      "services": [
+        {
+          "id": "ea83f32a-1d08-4429-9ede-8542959a13e4",
+          "name": "Instalação",
+          "price": 250
+        }
+      ],
+      "parts": [
+        {
+          "id": "1bb4e39b-4c54-4f28-9e7b-0ade96ee7565",
+          "name": "Capacitor 20uF",
+          "price": 25
+        }
+      ],
+      "comments": "Teste",
+      "increment": "R$5,00",
+      "discount": "R$10,00",
+      "notification": true,
+      "total": 270,
+      "date": "2023-02-16T18:14:04.429Z"
+    },
+    {
+      "id": "419eff5c-e677-41f3-9b20-d2c6284bbf61",
+      "customer": {
+        "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+        "name": "Ivanildo Cândido  Bezerra",
+        "address": "Rua José",
+        "email": "string",
+        "phone": "(83) 99815-7585",
+        "document": "12"
+      },
+      "device": {
+        "id": "b72c322b-edb2-4abf-b885-dd8101715f5d",
+        "customer": {
+          "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+          "name": "Ivanildo Cândido  Bezerra",
+          "address": "Rua José",
+          "email": "string",
+          "phone": "(83) 99815-7585",
+          "document": "12"
+        },
+        "reference": "SC-0004",
+        "model": "Tradicional",
+        "brand": "Brastemp",
+        "location": "Quarto de Hóspedes"
+      },
+      "services": [
+        {
+          "id": "0dae0441-cfbf-4d42-b9c4-4e51014cb287",
+          "name": "Recarga De Gas",
+          "price": 150
+        }
+      ],
+      "parts": [
+        {
+          "id": "1bb4e39b-4c54-4f28-9e7b-0ade96ee7565",
+          "name": "Capacitor 20uF",
+          "price": 25
+        }
+      ],
+      "comments": "Teste ",
+      "increment": "R$115,58",
+      "discount": "R$120,00",
+      "notification": true,
+      "total": 170.57999999999998,
+      "date": "2023-03-16T19:14:04.206Z"
+    },
+    {
+      "id": "9660c0f1-b427-4a8c-85ff-1bb7a7dc12b3",
+      "customer": {
+        "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+        "name": "Ivanildo Cândido  Bezerra",
+        "address": "Rua José",
+        "email": "string",
+        "phone": "(83) 99815-7585",
+        "document": "12"
+      },
+      "device": {
+        "id": "b72c322b-edb2-4abf-b885-dd8101715f5d",
+        "customer": {
+          "id": "4b40f357-3f20-4148-878c-e0261c934f6d",
+          "name": "Ivanildo Cândido  Bezerra",
+          "address": "Rua José",
+          "email": "string",
+          "phone": "(83) 99815-7585",
+          "document": "12"
+        },
+        "reference": "SC-0004",
+        "model": "Tradicional",
+        "brand": "Brastemp",
+        "location": "Quarto de Hóspedes"
+      },
+      "services": [
+        {
+          "id": "ea83f32a-1d08-4429-9ede-8542959a13e4",
+          "name": "Instalação",
+          "price": 250
+        },
+        {
+          "id": "0dae0441-cfbf-4d42-b9c4-4e51014cb287",
+          "name": "Recarga De Gas",
+          "price": 150
+        },
+        {
+          "id": "485ffd85-8751-4471-977a-1d0f79d227b6",
+          "name": "Preventiva Petronio",
+          "price": 1000
+        }
+      ],
+      "parts": [],
+      "comments": "",
+      "increment": "0",
+      "discount": "0",
+      "notification": false,
+      "total": 1400,
+      "date": "2023-03-17T17:18:27.707Z"
+    }
+  ]
+}
