@@ -11,6 +11,8 @@ O Fixar será um SaaS multiempresa. Uma pessoa pode participar de uma ou mais or
 - **Banco:** PostgreSQL gerenciado.
 - **MVP recomendado:** Supabase para PostgreSQL, Auth, Row-Level Security e armazenamento de arquivos.
 - **Aplicativo:** React Native mantém uma camada própria de serviços; autenticação usa o cliente Supabase e as telas de negócio usam o adaptador central em `src/services/API.ts`.
+- **Monorepo incremental:** o app Expo permanece na raiz durante a migração; o painel global do proprietário vive em `apps/admin-web` e o contrato de QR Code em `packages/qr-contract`.
+- **Painel do proprietário:** a primeira versão gera QR Codes localmente, sem chave administrativa ou credencial do Supabase no navegador. Métricas globais e ações privilegiadas devem passar por uma API server-side autenticada antes de serem habilitadas.
 - **API:** contratos versionados em `/api/v1`; funções server-side concentram operações privilegiadas, convites, auditoria e integrações.
 - **Autenticação:** e-mail/senha inicialmente, com sessão JWT curta e refresh token seguro; MFA e login social podem ser acrescentados sem alterar o domínio.
 - **Autorização:** associação entre usuário e organização com papéis `owner`, `admin`, `technician` e `viewer`. Permissões finais por operação permanecem `[PENDENTE DE CONFIRMAÇÃO]`.
@@ -51,8 +53,9 @@ Não haverá conexão automática com o backend anterior. A importação futura 
 ## Sequência de implementação
 
 1. Criar ambientes isolados de homologação/produção quando necessários.
-2. Criar testes negativos de isolamento com identidades fictícias.
-3. Implementar convites e troca de organização ativa.
-4. Evoluir a matriz de permissões de técnicos e visualizadores.
-5. Acrescentar testes automatizados dos contratos de dados.
-6. Acrescentar assinatura e limites de plano somente após autorização e isolamento estarem testados.
+2. Consolidar o painel global do proprietário com autenticação server-side e métricas reais.
+3. Criar testes negativos de isolamento com identidades fictícias.
+4. Implementar convites e troca de organização ativa.
+5. Evoluir a matriz de permissões de técnicos e visualizadores.
+6. Acrescentar testes automatizados dos contratos de dados.
+7. Acrescentar assinatura e limites de plano somente após autorização e isolamento estarem testados.

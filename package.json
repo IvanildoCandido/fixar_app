@@ -2,9 +2,16 @@
   "name": "fixar",
   "version": "2.0.1",
   "main": "index.js",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "test": "tsx --test tests/**/*.test.ts",
     "report:fixtures": "tsx scripts/generate-maintenance-fixtures.ts",
+    "admin:dev": "npm run dev --workspace @fixar/admin-web",
+    "admin:build": "npm run build --workspace @fixar/admin-web",
+    "admin:typecheck": "npm run typecheck --workspace @fixar/admin-web",
     "start": "npx expo start",
     "build": "npx eas-cli@latest build --platform ios --clear-cache",
     "submit": "npx eas-cli@latest  submit",

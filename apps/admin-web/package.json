@@ -1,0 +1,26 @@
+{
+  "name": "@fixar/admin-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fixar/qr-contract": "*",
+    "lucide-react": "^0.468.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.9.2",
+    "vite": "^6.0.5"
+  }
+}

@@ -48,6 +48,9 @@ Este documento descreve o worktree observado, não produção.
 - A migration `20260827180000_security_audit_hardening.sql` corrigiu a RPC em lote para usar o helper privado de autorização, removeu execução anônima e endureceu referências de usuário por organização sem apagar histórico. O event trigger automático de RLS foi preservado sem execução direta pelos papéis da API; os alerts correspondentes do advisor foram eliminados.
 - Nova manutenção começa pela identificação do atendimento: permite ler o QR Code ou pesquisar cliente e, em seguida, consultar somente os equipamentos daquele cliente. O diagnóstico permanece recolhido até existir equipamento selecionado e então abre com reposicionamento automático.
 - O formulário técnico avança sequencialmente: recolher a seção aberta fecha a etapa atual, abre a próxima e a reposiciona no topo; a última seção pode ser fechada sem reiniciar o fluxo.
+- Monorepo iniciado de forma incremental: `apps/admin-web` contém o painel global do proprietário e `packages/qr-contract` centraliza o payload e a referência de 7 caracteres dos QR Codes; o app Expo permanece na raiz para preservar o build nativo.
+- O painel administrativo já gera QR Codes localmente, permite gerar uma referência manual ou até 24 referências automáticas, baixar PNG e imprimir. Métricas de usuários, organizações, armazenamento e banda aparecem como pendentes até existir uma API server-side protegida.
+- MCP do Supabase configurado em `.vscode/mcp.json` e `.mcp.json`, restrito ao projeto de desenvolvimento `gcdhtfytpatvesadeyim`, com grupos `database,docs` e leitura/escrita habilitadas; a autenticação OAuth no VS Code permanece pendente de ação do proprietário e mutações remotas exigem autorização explícita.
 
 ## Limitações da descoberta
 
