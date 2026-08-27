@@ -19,10 +19,9 @@ import {
   TotalValue,
   ButtonsArea,
   ScanArea,
-  ReferenceCode,
-  Label,
-  InfoArea,
-  CustomerName,
+  ScanHeader,
+  ScanTitle,
+  ScanDescription,
 } from "./styles";
 import { Alert, Modal, ScrollView } from "react-native";
 import { defaultCustomer, defaultDevice } from "../../utils/dafaultValues";
@@ -38,9 +37,12 @@ import { RootParamList } from "../../routes/routes.types";
 import { ChoiceChips, CollapsibleSection, MeasurementsEditor, TechnicalChecksEditor } from "../../components/TechnicalMaintenance";
 import { checksForServiceNames, makeDefaultChecks, maskedMoneyValue, withCalculatedDeltaT } from "../../domain/technicalMaintenance";
 import { SignaturePad } from "../../components/SignaturePad";
+import { SelectCustomers } from "../../components/Form/SelectCustomers";
+import { SelectDevices } from "../../components/Form/SelectDevices";
 
 export const Repair = () => {
   type SectionKey = "diagnosis" | "services" | "checks" | "measurements" | "parts" | "result" | "comments" | "values" | "signatures";
+  const sectionOrder: SectionKey[] = ["diagnosis", "services", "checks", "measurements", "parts", "result", "comments", "values", "signatures"];
   const theme = useTheme();
   const route = useRoute<RouteProp<RootParamList, "Repair">>();
   const [selectedCustomer, setSelectedCustomer] =
@@ -63,7 +65,7 @@ export const Repair = () => {
   const [technicianSignatureSvg, setTechnicianSignatureSvg] = useState("");
   const [customerSignatureSvg, setCustomerSignatureSvg] = useState("");
   const [isSigning, setIsSigning] = useState(false);
-  const [openSection, setOpenSection] = useState<SectionKey | null>("diagnosis");
+  const [openSection, setOpenSection] = useState<SectionKey | null>(route.params?.device?.id ? "diagnosis" : null);
   const contentRef = useRef<ScrollView>(null);
   const sectionPositions = useRef<Partial<Record<SectionKey, number>>>({});
   const [customerSignerName, setCustomerSignerName] = useState("");
@@ -72,6 +74,20 @@ export const Repair = () => {
   const [modal, setModal] = useState(false);
   const { session } = useAuth();
 
+  useEffect(() => {
+    if (selectedDevice.id && selectedDevice.Customer?.id !== selectedCustomer.id) {
+      setSelectedDevice(defaultDevice);
+      setOpenSection(null);
+      contentRef.current?.scrollTo({ y: 0, animated: true });
+    }
+  }, [selectedCustomer.id, selectedDevice.Customer?.id, selectedDevice.id]);
+
+  useEffect(() => {
+    if (!selectedDevice.id) return;
+    setOpenSection("diagnosis");
+    setTimeout(() => scrollToSection("diagnosis"), 100);
+  }, [selectedDevice.id]);
+
   const scrollToSection = (section: SectionKey) => {
     const y = sectionPositions.current[section];
     if (y !== undefined) contentRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
@@ -79,9 +95,10 @@ export const Repair = () => {
   const sectionProps = (section: SectionKey) => ({
     open: openSection === section,
     onToggle: () => {
-      const next = openSection === section ? null : section;
+      const currentIndex = sectionOrder.indexOf(section);
+      const next = openSection === section ? sectionOrder[currentIndex + 1] ?? null : section;
       setOpenSection(next);
-      if (next) setTimeout(() => scrollToSection(next), 80);
+      if (next) setTimeout(() => scrollToSection(next), 100);
     },
     onLayout: (event: any) => {
       sectionPositions.current[section] = event.nativeEvent.layout.y;
@@ -109,6 +126,12 @@ export const Repair = () => {
   }, [services]);
 
   const handlerRegister = async () => {
+    if (!selectedCustomer.id || !selectedDevice.id) {
+      setOpenSection(null);
+      contentRef.current?.scrollTo({ y: 0, animated: true });
+      Alert.alert("Identificação obrigatória", "Selecione o cliente e o equipamento antes de finalizar a manutenção.");
+      return;
+    }
     const intervalDays = Number(reminderDays);
     if (notification && (!Number.isInteger(intervalDays) || intervalDays < 1)) {
       setReminderError("Informe um prazo válido, em dias.");
@@ -204,15 +227,15 @@ export const Repair = () => {
       <Header title={"Cadastro de Manutenções"} icons={true} />
       <ContentArea ref={contentRef} automaticallyAdjustKeyboardInsets={true} scrollEnabled={!isSigning}>
         <ScanArea>
-          <InfoArea>
-            <Label>Referência do Equipamento:</Label>
-            <ReferenceCode>{selectedDevice.reference || "Leia o código do equipamento"}</ReferenceCode>
-            <Label>Cliente:</Label>
-            <CustomerName>{selectedCustomer.name || "Nenhum cliente identificado"}</CustomerName>
-          </InfoArea>
-          <ButtonScan accessibilityRole="button" accessibilityLabel="Ler código do equipamento" onPress={() => setModal(true)}>
-            <QrCode size={22} color={theme.colors.primary} />
-          </ButtonScan>
+          <ScanHeader>
+            <ScanTitle>Identifique o equipamento</ScanTitle>
+            <ButtonScan accessibilityRole="button" accessibilityLabel="Ler código do equipamento" onPress={() => setModal(true)}>
+              <QrCode size={22} color={theme.colors.primary} />
+            </ButtonScan>
+          </ScanHeader>
+          <ScanDescription>Leia o QR Code ou escolha primeiro o cliente e depois um equipamento cadastrado.</ScanDescription>
+          <SelectCustomers selected={selectedCustomer} setSelected={setSelectedCustomer} />
+          <SelectDevices customerId={selectedCustomer.id} selected={selectedDevice} setSelected={setSelectedDevice} />
         </ScanArea>
         <CollapsibleSection {...sectionProps("diagnosis")} title="Diagnóstico" state={diagnosis.reportedProblem || diagnosis.foundCondition || diagnosis.technicalDiagnosis ? "complete" : "pending"}>
           <FormField label="Problema relatado" value={diagnosis.reportedProblem ?? ""} onChangeText={(reportedProblem) => setDiagnosis((value) => ({ ...value, reportedProblem }))} multiline placeholder="Relato curto do cliente" />

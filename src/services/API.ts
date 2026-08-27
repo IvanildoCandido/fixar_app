@@ -129,6 +129,19 @@ async function listDevices() {
   });
 }
 
+export async function listDevicesByCustomer(customerId: string) {
+  const organizationId = requireOrganization();
+  return cachedQuery(`devices:${organizationId}:customer:${customerId}`, 300000, async () => {
+    const result = await supabase.from("assets")
+      .select("id, customer_id, reference, model, brand, location, equipment_type, serial_number, capacity_btu, voltage, phase, refrigerant, installed_at, Customer:customers(id, name, email, phone, address, document)")
+      .eq("organization_id", organizationId)
+      .eq("customer_id", customerId)
+      .is("deleted_at", null)
+      .order("reference");
+    return unwrap<any[]>(result as any).map(mapDevice);
+  });
+}
+
 async function listCatalog(kind: "part" | "service") {
   const organizationId = requireOrganization();
   return cachedQuery(`catalog:${organizationId}:${kind}`, 300000, async () => {

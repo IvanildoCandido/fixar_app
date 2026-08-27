@@ -38,12 +38,12 @@ export const SelectDevices = ({
   };
   return (
     <>
-      <LabelDevice>Equipamento</LabelDevice>
-      <Container onPress={() => handlerModalDevices()}>
+      <LabelDevice>Equipamento *</LabelDevice>
+      <Container accessibilityRole="button" accessibilityLabel="Selecionar equipamento" onPress={() => handlerModalDevices()}>
         {selected.reference ? (
           <ReferenceName>{selected.reference}</ReferenceName>
         ) : (
-          <DeviceName>{selected.location}</DeviceName>
+          <DeviceName>{selected.location || (customerId ? "Selecione um equipamento" : "Selecione um cliente primeiro")}</DeviceName>
         )}
 
         <ChevronDown size={18} color={theme.colors.muted} />

@@ -129,3 +129,11 @@ Este registro complementa, mas não substitui, o histórico Git.
 - Ordens em lote passaram de uma requisição por equipamento para a RPC transacional `create_work_orders_batch`.
 - Aplicada e validada via MCP a migration `20260827130000_performance_and_batch_orders.sql`, com cinco índices voltados a histórico, filtros, lembretes e catálogo; o projeto remoto tinha 3.175 ordens no momento da auditoria.
 - Typecheck, dez testes automatizados, verificação de diff e export do bundle iOS foram aprovados.
+
+## 2026-08-27 — Identificação guiada na nova manutenção
+
+- A primeira etapa da ordem passou a oferecer duas entradas equivalentes: leitura do QR Code ou seleção pesquisável de cliente e equipamento.
+- A busca de equipamentos do cliente é filtrada no Supabase e armazenada no cache por organização/cliente, sem baixar todos os equipamentos a cada abertura.
+- Ao trocar de cliente, um equipamento incompatível é limpo; após escolher ou ler um equipamento, o diagnóstico abre e é reposicionado automaticamente.
+- A finalização bloqueia ordens sem cliente/equipamento e retorna a tela para a etapa de identificação.
+- O recolhimento de cada etapa passou a avançar automaticamente para a próxima seção e posicioná-la no topo, mantendo o fechamento normal ao final de `Assinaturas`.

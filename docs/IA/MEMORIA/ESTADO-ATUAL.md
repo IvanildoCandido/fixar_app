@@ -44,6 +44,8 @@ Este documento descreve o worktree observado, não produção.
 - Histórico de manutenções e lembretes usam paginação no servidor; filtros de cliente, equipamento e período são aplicados no Supabase, e detalhes pesados só são consultados ao gerar/abrir um relatório.
 - Consultas estáveis de clientes, equipamentos, catálogo, perfil da empresa e páginas operacionais têm cache com TTL, deduplicação de requisições simultâneas, invalidação após escrita e métricas locais; listas de cadastro aceitam atualização manual sem piscar a tela a cada foco.
 - Ordens em lote são gravadas pela RPC transacional `create_work_orders_batch`, substituindo várias chamadas sequenciais. A migration `20260827130000_performance_and_batch_orders.sql` foi aplicada no Supabase de desenvolvimento com índices para histórico, filtros, lembretes e catálogo.
+- Nova manutenção começa pela identificação do atendimento: permite ler o QR Code ou pesquisar cliente e, em seguida, consultar somente os equipamentos daquele cliente. O diagnóstico permanece recolhido até existir equipamento selecionado e então abre com reposicionamento automático.
+- O formulário técnico avança sequencialmente: recolher a seção aberta fecha a etapa atual, abre a próxima e a reposiciona no topo; a última seção pode ser fechada sem reiniciar o fluxo.
 
 ## Limitações da descoberta
 

@@ -15,7 +15,10 @@ export const TotalArea = styled.View`margin: 8px 0 4px; padding: 18px; flex-dire
 export const TotalLabel = styled.Text`font-family: ${({ theme }) => theme.fonts.medium}; font-size: ${({ theme }) => theme.typography.body.size}px; color: ${({ theme }) => theme.colors.muted};`;
 export const TotalValue = styled.Text`font-family: ${({ theme }) => theme.fonts.bold}; font-size: ${({ theme }) => theme.typography.sectionTitle.size}px; color: ${({ theme }) => theme.colors.primary};`;
 export const ButtonsArea = styled.View`flex-direction: row; gap: 12px; margin-top: 4px;`;
-export const ScanArea = styled.View`width: 100%; flex-direction: row; align-items: center; justify-content: space-between; padding: 16px; border: 1px solid ${({ theme }) => theme.colors.border}; border-radius: ${({ theme }) => theme.radii.lg}px; background-color: ${({ theme }) => theme.colors.surface}; margin-bottom: 14px;`;
+export const ScanArea = styled.View`width: 100%; padding: 16px; border: 1px solid ${({ theme }) => theme.colors.border}; border-radius: ${({ theme }) => theme.radii.lg}px; background-color: ${({ theme }) => theme.colors.surface}; margin-bottom: 14px;`;
+export const ScanHeader = styled.View`flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px;`;
+export const ScanTitle = styled.Text`flex: 1; font-family: ${({ theme }) => theme.fonts.semibold}; font-size: ${({ theme }) => theme.typography.heading.size}px; color: ${({ theme }) => theme.colors.foreground};`;
+export const ScanDescription = styled.Text`font-family: ${({ theme }) => theme.fonts.regular}; font-size: ${({ theme }) => theme.typography.bodySmall.size}px; line-height: ${({ theme }) => theme.typography.bodySmall.lineHeight}px; color: ${({ theme }) => theme.colors.muted}; margin-bottom: 4px;`;
 export const SelectionArea = styled.View`width: 100%;`;
 export const ReferenceCode = styled.Text`font-family: ${({ theme }) => theme.fonts.semibold}; font-size: ${({ theme }) => theme.typography.body.size}px; color: ${({ theme }) => theme.colors.foreground};`;
 export const CustomerName = styled.Text`font-family: ${({ theme }) => theme.fonts.semibold}; font-size: ${({ theme }) => theme.typography.body.size}px; color: ${({ theme }) => theme.colors.primary};`;
