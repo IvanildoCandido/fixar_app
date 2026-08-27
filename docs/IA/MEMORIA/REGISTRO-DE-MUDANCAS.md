@@ -137,3 +137,23 @@ Este registro complementa, mas não substitui, o histórico Git.
 - Ao trocar de cliente, um equipamento incompatível é limpo; após escolher ou ler um equipamento, o diagnóstico abre e é reposicionado automaticamente.
 - A finalização bloqueia ordens sem cliente/equipamento e retorna a tela para a etapa de identificação.
 - O recolhimento de cada etapa passou a avançar automaticamente para a próxima seção e posicioná-la no topo, mantendo o fechamento normal ao final de `Assinaturas`.
+
+## 2026-08-27 — Hardening PostgreSQL multiempresa
+
+- Aplicada no Supabase de desenvolvimento a migration incremental `20260827180000_security_audit_hardening.sql`, sem alterar migrations anteriores nem reescrever dados.
+- Corrigida a RPC transacional `create_work_orders_batch` para usar `private.has_organization_role`, preservando `SECURITY INVOKER`, `search_path` vazio e execução autenticada.
+- Adicionada validação de referências de usuário por organização em ordens, anexos, convites e auditoria, exigindo associação ativa nas referências operacionais e preservando o histórico após suspensão ou remoção do membro.
+- Removida a execução direta de `public.rls_auto_enable()` pelos papéis da API sem desativar o event trigger `ensure_rls`; também foram removidos grants anônimos das tabelas técnicas e da RPC em lote.
+- Teste transacional remoto com rollback confirmou lote múltiplo, atomicidade, isolamento de leitura/escrita, negação cross-tenant, preservação histórica, ausência de grants anônimos e RLS automático em tabela pública nova.
+- O Security Advisor deixou de reportar os dois alerts de função `SECURITY DEFINER`; permanece apenas a proteção contra senhas vazadas, indisponível no plano Free observado e dependente de ação manual após mudança para Pro ou superior.
+- O worktree não contém implementação de Sync v1; por isso não foi possível executar regressão de SQLite, Outbox, push/pull ou convergência.
+
+## 2026-08-27 — Reconciliação do Supabase reutilizado
+
+- Confirmado que existiu um repositório FIXAR anterior, abandonado, e que o repositório atual é uma reconstrução limpa que reutiliza o mesmo projeto Supabase.
+- Inventariados objetos públicos/privados, funções, triggers, policies, índices, Storage, Auth agregado, extensions, migrations, tamanhos e dependências remotas.
+- As 15 tabelas públicas, nove funções da aplicação, 21 triggers, 63 policies, 62 índices, sete enums e dois buckets correspondem às migrations ou contratos atuais; `rls_auto_enable` e os event triggers restantes foram classificados como infraestrutura ativa.
+- Não foram encontradas tabelas, colunas, funções, RPCs, triggers, índices, publication ou Edge Function do antigo Sync v1.
+- As 3.175 OS e seus 3.470 itens foram preservados porque o histórico confirma importação deliberada da API legada do Soilucenter para a base de desenvolvimento atual.
+- Nenhum objeto atingiu a classificação `LEGADO CONFIRMADO`; por segurança, nenhuma migration de limpeza, exclusão ou compactação foi executada.
+- Inventário recuperável registrado em `docs/IA/AUDITORIAS/RECONCILIACAO-SUPABASE-2026-08-27.md`.

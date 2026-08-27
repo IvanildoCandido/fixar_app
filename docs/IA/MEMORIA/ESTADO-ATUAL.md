@@ -10,10 +10,11 @@ Este documento descreve o worktree observado, não produção.
 
 - Framework documental de engenharia assistida por IA instalado e personalizado no worktree.
 - Projeto copiado para uma nova raiz como `Fixar`, com repositório Git independente na branch `main` e remoto `origin` configurado para o repositório `IvanildoCandido/fixar_app` no GitHub.
+- Existiu um repositório FIXAR anterior, depois abandonado. O repositório atual é uma reconstrução limpa, mas reutiliza o projeto Supabase; o código e as migrations atuais são a fonte da verdade para funcionalidades da aplicação.
 - Versão declarada do aplicativo: `2.0.1` (`package.json` e `app.json`); runtime atualizado para Expo SDK 54, React Native 0.81 e React 19.1.
 - Supabase Auth integrado com cadastro, login, confirmação de e-mail, sessão em armazenamento seguro nativo, onboarding de organização/owner e logout.
 - Estratégia de backend definida em `docs/ARQUITETURA-SAAS.md`: PostgreSQL, autenticação gerenciada, isolamento por `organization_id`, RLS e API versionada.
-- Schema inicial aplicado ao projeto Supabase de desenvolvimento e versionado em `supabase/migrations/`: 12 tabelas públicas com RLS, 43 políticas, referências multiempresa compostas e bucket privado para anexos.
+- Schema aplicado ao projeto Supabase de desenvolvimento e versionado em `supabase/migrations/`: 15 tabelas públicas com RLS, referências multiempresa compostas e bucket privado para anexos.
 - Clientes, ativos, catálogo, ordens concluídas e orçamentos usam a persistência Supabase por meio do adaptador central das telas.
 - Identidade Expo e nativa migrada para Fixar (`app.fixar.mobile`); referências da marca anterior removidas do código, ativos e documentação.
 - FIXAR Design System documentado em `docs/design/DESIGN_SYSTEM.md`, com tokens tipados, paletas light/dark, Inter, Lucide e preferência de tema persistida.
@@ -44,6 +45,7 @@ Este documento descreve o worktree observado, não produção.
 - Histórico de manutenções e lembretes usam paginação no servidor; filtros de cliente, equipamento e período são aplicados no Supabase, e detalhes pesados só são consultados ao gerar/abrir um relatório.
 - Consultas estáveis de clientes, equipamentos, catálogo, perfil da empresa e páginas operacionais têm cache com TTL, deduplicação de requisições simultâneas, invalidação após escrita e métricas locais; listas de cadastro aceitam atualização manual sem piscar a tela a cada foco.
 - Ordens em lote são gravadas pela RPC transacional `create_work_orders_batch`, substituindo várias chamadas sequenciais. A migration `20260827130000_performance_and_batch_orders.sql` foi aplicada no Supabase de desenvolvimento com índices para histórico, filtros, lembretes e catálogo.
+- A migration `20260827180000_security_audit_hardening.sql` corrigiu a RPC em lote para usar o helper privado de autorização, removeu execução anônima e endureceu referências de usuário por organização sem apagar histórico. O event trigger automático de RLS foi preservado sem execução direta pelos papéis da API; os alerts correspondentes do advisor foram eliminados.
 - Nova manutenção começa pela identificação do atendimento: permite ler o QR Code ou pesquisar cliente e, em seguida, consultar somente os equipamentos daquele cliente. O diagnóstico permanece recolhido até existir equipamento selecionado e então abre com reposicionamento automático.
 - O formulário técnico avança sequencialmente: recolher a seção aberta fecha a etapa atual, abre a próxima e a reposiciona no topo; a última seção pode ser fechada sem reiniciar o fluxo.
 
@@ -52,8 +54,11 @@ Este documento descreve o worktree observado, não produção.
 - O estado remoto foi verificado após as migrations, mas depende do serviço externo; os contratos versionados estão em `supabase/migrations/`.
 - Há testes automatizados locais para cálculos e composição dinâmica do relatório técnico; CI ainda não foi configurada.
 - O gerenciador de pacotes canônico é npm; `package-lock.json` é o único lockfile mantido.
+- Não existe implementação de Sync v1 no worktree observado: SQLite, Outbox, `mutation_id`, `record_version`, push/pull e recuperação `IN_FLIGHT` não estão presentes. Os estados de sync existentes são somente componentes visuais.
 - Convites, troca entre múltiplas organizações, upload de anexos e matriz detalhada de permissões ainda precisam ser implementados no aplicativo.
 - A migração visual é incremental: telas operacionais ainda usam componentes legados; estados de sync são apenas componentes visuais até existir uma fonte real de sincronização/offline.
 - Configuração de publicação e credenciais EAS permanecem pendentes.
 - Os índices novos ainda precisam acumular tráfego real antes de uma comparação confiável de uso pelo advisor; o linter os classifica como não utilizados imediatamente após sua criação, o que é esperado.
 - O lembrete de manutenção usa notificação local do dispositivo. Push remoto para outros aparelhos ainda exige persistência de Expo Push Tokens, serviço emissor e agendamento seguro no backend `[PENDENTE DE CONFIRMAÇÃO]`.
+- A proteção contra senhas vazadas do Supabase Auth permanece desativada. O recurso exige plano Pro ou superior, enquanto a organização observada usa o plano Free; habilitação depende de mudança de plano e configuração manual em Auth.
+- A reconciliação completa de 2026-08-27 não encontrou tabelas, funções, RPCs, triggers, policies, índices, buckets ou estruturas de Sync v1 comprovadamente legadas. Nenhum objeto ou dado foi removido; inventário em `docs/IA/AUDITORIAS/RECONCILIACAO-SUPABASE-2026-08-27.md`.

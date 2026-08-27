@@ -6,7 +6,7 @@
 
 Aplicativo móvel para operações de assistência técnica: cadastro de clientes, equipamentos, peças e serviços; abertura de manutenções; consulta de serviços concluídos; geração de orçamentos e relatórios. Evidências: `src/routes/app.routes.tsx`, `src/routes/main.routes.tsx`, `src/screens/Home/index.tsx` e `src/types/data.ts`.
 
-O produto `Fixar` nasceu de uma base móvel legada, agora sem vínculo de identidade com o produto anterior. O objetivo confirmado pelo responsável é atender múltiplas empresas e usuários, com assinatura em uma etapa posterior. Autenticação, onboarding de empresa e persistência operacional estão conectados ao Supabase.
+O produto `Fixar` atual nasceu de uma base móvel legada, mas foi iniciado como repositório novo e reconstrução limpa, sem vínculo de identidade ou continuidade arquitetural automática com um repositório FIXAR anterior posteriormente abandonado. O projeto Supabase foi reutilizado; por isso estruturas remotas sem evidência neste repositório não devem ser promovidas a funcionalidades atuais. O objetivo confirmado pelo responsável é atender múltiplas empresas e usuários, com assinatura em uma etapa posterior. Autenticação, onboarding de empresa e persistência operacional estão conectados ao Supabase.
 
 ## Estrutura e tecnologias confirmadas
 

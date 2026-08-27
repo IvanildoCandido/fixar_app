@@ -17,3 +17,4 @@ Evoluir o Fixar para um produto multiempresa e multiusuário, com possibilidade 
 7. Implementar upload privado de anexos e auditoria das operações sensíveis.
 8. Substituir o restante do adaptador de compatibilidade por contratos de domínio tipados e ampliar os testes de integração.
 9. Definir planos e integração de assinatura somente após a base multiempresa estar validada.
+10. Ao avaliar plano Pro ou superior para o Supabase, habilitar manualmente a proteção contra senhas vazadas em Auth e confirmar a remoção do alerta no Security Advisor.
