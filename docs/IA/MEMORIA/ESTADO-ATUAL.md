@@ -51,6 +51,9 @@ Este documento descreve o worktree observado, não produção.
 - Monorepo iniciado de forma incremental: `apps/admin-web` contém o painel global do proprietário e `packages/qr-contract` centraliza o payload e a referência de 7 caracteres dos QR Codes; o app Expo permanece na raiz para preservar o build nativo.
 - O painel administrativo já gera QR Codes localmente, permite gerar uma referência manual ou até 24 referências automáticas, baixar PNG e imprimir. Métricas de usuários, organizações, armazenamento e banda aparecem como pendentes até existir uma API server-side protegida.
 - MCP do Supabase configurado em `.vscode/mcp.json` e `.mcp.json`, restrito ao projeto de desenvolvimento `gcdhtfytpatvesadeyim`, com grupos `database,docs` e leitura/escrita habilitadas; a autenticação OAuth no VS Code permanece pendente de ação do proprietário e mutações remotas exigem autorização explícita.
+- Migration `20260827203704_platform_admin_qr_codes` aplicada no Supabase: criou `platform_admins` e `generated_qr_codes`, ambas com RLS, e a RPC protegida `platform_admin_metrics`; somente a conta global do proprietário foi cadastrada como administradora.
+- `apps/admin-web` agora autentica via Supabase Auth, valida `platform_admins`, persiste e recarrega QR Codes do banco e consulta métricas reais de Auth, organizações, clientes, ativos, ordens e Storage.
+- Correção do painel web: o Vite foi configurado com `envDir: "../.."` para carregar as variáveis públicas do `.env` na raiz do monorepo; o dashboard voltou a iniciar sem o erro de configuração do Supabase.
 
 ## Limitações da descoberta
 

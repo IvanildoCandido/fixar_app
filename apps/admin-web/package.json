@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fixar/qr-contract": "*",
+    "@supabase/supabase-js": "^2.112.4",
     "lucide-react": "^0.468.0",
     "qrcode": "^1.5.4",
     "react": "^19.1.0",

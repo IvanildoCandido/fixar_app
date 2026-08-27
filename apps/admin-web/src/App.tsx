@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import QRCode from "qrcode";
+import type { Session } from "@supabase/supabase-js";
 import {
   Activity,
   ArrowUpRight,
@@ -27,8 +28,10 @@ import {
   createEquipmentReference,
   normalizeEquipmentReference,
 } from "@fixar/qr-contract";
+import { supabase } from "./supabase";
 
 type GeneratedCode = { reference: string; dataUrl: string };
+type Metrics = { users: number; organizations: number; customers: number; assets: number; work_orders: number; qr_codes: number; storage_files: number; storage_bytes: number };
 
 const menuItems = [
   { label: "Visão geral", icon: LayoutDashboard, active: true },
@@ -37,19 +40,71 @@ const menuItems = [
   { label: "Usuários", icon: Users },
 ];
 
-const metricCards = [
-  { label: "Usuários ativos", value: "--", detail: "Conectar fonte de dados", icon: Users, tone: "green" },
-  { label: "Organizações", value: "--", detail: "Conectar fonte de dados", icon: Boxes, tone: "blue" },
-  { label: "Armazenamento", value: "--", detail: "Aguardando integração", icon: Database, tone: "amber" },
-  { label: "Banda utilizada", value: "--", detail: "Aguardando integração", icon: Activity, tone: "red" },
-];
-
 function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authorized, setAuthorized] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState("");
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
   const [referenceInput, setReferenceInput] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [codes, setCodes] = useState<GeneratedCode[]>([]);
   const [error, setError] = useState("");
   const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) void loadSession(data.session);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (mounted) void loadSession(nextSession);
+    });
+    return () => { mounted = false; listener.subscription.unsubscribe(); };
+  }, []);
+
+  async function loadSession(nextSession: Session | null) {
+    setAuthLoading(true);
+    setSession(nextSession);
+    setAuthorized(false);
+    setMetrics(null);
+    if (!nextSession) { setAuthLoading(false); return; }
+    const { data, error } = await supabase.from("platform_admins").select("user_id").eq("user_id", nextSession.user.id).maybeSingle();
+    if (error || !data) {
+      await supabase.auth.signOut();
+      setAuthError("Esta conta não tem acesso ao painel global.");
+      setAuthLoading(false);
+      return;
+    }
+    setAuthorized(true);
+    setAuthLoading(false);
+    await loadDashboardData();
+  }
+
+  async function loadDashboardData() {
+    setLoadingMetrics(true);
+    const [{ data: metricData }, { data: qrData }] = await Promise.all([
+      supabase.rpc("platform_admin_metrics"),
+      supabase.from("generated_qr_codes").select("reference, payload").order("created_at", { ascending: false }).limit(48),
+    ]);
+    if (metricData) setMetrics(metricData as Metrics);
+    if (qrData) {
+      const restored = await Promise.all(qrData.map(async (row) => ({ reference: row.reference, dataUrl: await QRCode.toDataURL(row.payload, { width: 480, margin: 2, color: { dark: "#10261d", light: "#ffffff" } }) })));
+      setCodes(restored);
+    }
+    setLoadingMetrics(false);
+  }
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAuthError("");
+    const form = new FormData(event.currentTarget);
+    const { error } = await supabase.auth.signInWithPassword({ email: String(form.get("email")).trim().toLowerCase(), password: String(form.get("password")) });
+    if (error) setAuthError("E-mail ou senha inválidos.");
+  }
+
+  async function signOut() { await supabase.auth.signOut(); setCodes([]); }
 
   async function generateCodes() {
     setError("");
@@ -64,13 +119,18 @@ function App() {
 
     const generated = await Promise.all(references.map(async (reference) => ({
       reference,
+      payload: createEquipmentQrPayload(reference),
       dataUrl: await QRCode.toDataURL(createEquipmentQrPayload(reference), {
         width: 480,
         margin: 2,
         color: { dark: "#10261d", light: "#ffffff" },
       }),
     })));
-    setCodes(generated);
+    if (!session) return;
+    const { error: insertError } = await supabase.from("generated_qr_codes").insert(generated.map(({ reference, payload }) => ({ reference, payload, generated_by: session.user.id })));
+    if (insertError) { setError(insertError.code === "23505" ? "Uma ou mais referências já existem. Gere novamente." : "Não foi possível persistir os QR Codes."); return; }
+    setCodes(generated.map(({ reference, dataUrl }) => ({ reference, dataUrl })));
+    setMetrics((current) => current ? { ...current, qr_codes: current.qr_codes + generated.length } : current);
   }
 
   function downloadCode(code: GeneratedCode) {
@@ -86,6 +146,9 @@ function App() {
   }
 
   const visibleCodes = showAll ? codes : codes.slice(0, 6);
+
+  if (authLoading) return <div className="auth-screen"><div className="auth-box"><div className="brand-mark"><WrenchMark /></div><span className="eyebrow">FIXAR ADMIN</span><h1>Carregando painel</h1><p>Validando seu acesso seguro.</p></div></div>;
+  if (!session || !authorized) return <LoginScreen error={authError} onSubmit={handleLogin} />;
 
   return (
     <div className="app-shell">
@@ -131,9 +194,10 @@ function App() {
           </section>
 
           <section className="metric-grid" aria-label="Indicadores do sistema">
-            {metricCards.map(({ label, value, detail, icon: Icon, tone }) => <article className="metric-card" key={label}>
-              <div className={`metric-icon ${tone}`}><Icon size={19} /></div><div className="metric-label">{label}</div><strong>{value}</strong><span>{detail}</span>
-            </article>)}
+            <MetricCard label="Usuários cadastrados" value={metrics ? String(metrics.users) : "…"} detail="Contas no Auth" icon={Users} tone="green" />
+            <MetricCard label="Organizações" value={metrics ? String(metrics.organizations) : "…"} detail={`${metrics?.customers ?? "…"} clientes cadastrados`} icon={Boxes} tone="blue" />
+            <MetricCard label="Armazenamento" value={metrics ? formatBytes(metrics.storage_bytes) : "…"} detail={metrics ? `${metrics.storage_files} arquivos` : "Consultando banco"} icon={Database} tone="amber" />
+            <MetricCard label="Ordens de serviço" value={metrics ? String(metrics.work_orders) : "…"} detail={metrics ? `${metrics.assets} equipamentos ativos` : "Consultando banco"} icon={Activity} tone="red" />
           </section>
 
           <section className="primary-grid">
@@ -153,11 +217,25 @@ function App() {
 
           {codes.length > 0 && <section className="panel codes-panel" id="qr-results"><div className="panel-heading results-heading"><div><span className="section-kicker"><Check size={15} /> PRONTOS PARA USO</span><h3>QR Codes gerados</h3><p>{codes.length} etiqueta{codes.length > 1 ? "s" : ""} criada{codes.length > 1 ? "s" : ""} nesta sessão.</p></div><div className="results-actions"><button className="secondary-button" onClick={printCodes} type="button"><Printer size={17} /> Imprimir</button><button className="icon-button" onClick={() => setCodes([])} aria-label="Fechar resultados" type="button"><X size={18} /></button></div></div><div className="code-grid">{visibleCodes.map((code) => <article className="code-card" key={code.reference}><div className="code-image-wrap"><img src={code.dataUrl} alt={`QR Code da referência ${code.reference}`} /></div><div className="code-card-footer"><div><span>REFERÊNCIA</span><strong>{code.reference}</strong></div><button className="download-button" onClick={() => downloadCode(code)} aria-label={`Baixar QR Code ${code.reference}`} type="button"><Download size={17} /></button></div></article>)}</div>{codes.length > 6 && <button className="show-more" onClick={() => setShowAll((current) => !current)} type="button">{showAll ? "Mostrar menos" : `Ver os ${codes.length} códigos`} <ArrowUpRight size={16} /></button>}</section>}
 
-          <footer className="footer-note"><span><span className="status-pip" /> Fixar Admin <b>v1.0</b></span><span>Última atualização: agora</span></footer>
+          <footer className="footer-note"><span><span className="status-pip" /> Fixar Admin <b>v1.0</b></span><span>{loadingMetrics ? "Atualizando dados..." : "Dados atualizados agora"} · <button className="footer-action" onClick={loadDashboardData} type="button">Atualizar</button> · <button className="footer-action" onClick={signOut} type="button">Sair</button></span></footer>
         </div>
       </main>
     </div>
   );
+}
+
+function MetricCard({ label, value, detail, icon: Icon, tone }: { label: string; value: string; detail: string; icon: typeof Users; tone: string }) {
+  return <article className="metric-card"><div className={`metric-icon ${tone}`}><Icon size={19} /></div><div className="metric-label">{label}</div><strong>{value}</strong><span>{detail}</span></article>;
+}
+
+function LoginScreen({ error, onSubmit }: { error: string; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
+  return <div className="auth-screen"><div className="auth-box"><div className="brand-mark"><WrenchMark /></div><span className="eyebrow">FIXAR ADMIN</span><h1>Acesso do proprietário</h1><p>Entre para acompanhar a operação global do Fixar.</p><form onSubmit={onSubmit}><label>E-mail<input name="email" type="email" autoComplete="email" placeholder="seu@email.com" required /></label><label>Senha<input name="password" type="password" autoComplete="current-password" placeholder="Sua senha" required /></label>{error && <div className="form-error"><X size={15} />{error}</div>}<button className="primary-button" type="submit">Entrar no painel</button></form></div></div>;
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function WrenchMark() {
