@@ -1,5 +1,15 @@
 import styled from "styled-components/native";
 export const PadLabel = styled.Text`font-family: ${({ theme }) => theme.fonts.medium}; font-size: ${({ theme }) => theme.typography.label.size}px; color: ${({ theme }) => theme.colors.title};`;
-export const Pad = styled.View`height: 132px; border: 1px dashed ${({ theme }) => theme.colors.input}; border-radius: ${({ theme }) => theme.radii.md}px; background-color: ${({ theme }) => theme.colors.surfaceMuted}; overflow: hidden;`;
+export const Preview = styled.Pressable`height: 104px; align-items: center; justify-content: center; border: 1px dashed ${({ theme }) => theme.colors.input}; border-radius: ${({ theme }) => theme.radii.md}px; background-color: ${({ theme }) => theme.colors.surfaceMuted}; overflow: hidden;`;
+export const PreviewHint = styled.View`align-items: center; gap: 8px;`;
+export const PreviewText = styled.Text`font-family: ${({ theme }) => theme.fonts.medium}; font-size: ${({ theme }) => theme.typography.bodySmall.size}px; color: ${({ theme }) => theme.colors.primary};`;
 export const ClearButton = styled.Pressable`min-height: 40px; padding: 8px 12px; align-self: flex-end; justify-content: center;`;
 export const ClearText = styled.Text`font-family: ${({ theme }) => theme.fonts.medium}; font-size: ${({ theme }) => theme.typography.bodySmall.size}px; color: ${({ theme }) => theme.colors.danger};`;
+export const CaptureScreen = styled.SafeAreaView`flex: 1; padding: 12px 20px 16px; background-color: ${({ theme }) => theme.colors.background};`;
+export const CaptureHeader = styled.View`height: 48px; flex-direction: row; align-items: center; justify-content: space-between;`;
+export const CaptureTitle = styled.Text`flex: 1; font-family: ${({ theme }) => theme.fonts.bold}; font-size: ${({ theme }) => theme.typography.heading.size}px; color: ${({ theme }) => theme.colors.foreground};`;
+export const CloseButton = styled.Pressable`width: 44px; height: 44px; align-items: center; justify-content: center; border-radius: ${({ theme }) => theme.radii.md}px;`;
+export const Canvas = styled.View`flex: 1; min-height: 180px; margin: 8px 0 12px; border: 2px dashed ${({ theme }) => theme.colors.input}; border-radius: ${({ theme }) => theme.radii.lg}px; background-color: ${({ theme }) => theme.colors.surface}; overflow: hidden;`;
+export const CaptureActions = styled.View`height: 52px; flex-direction: row; justify-content: flex-end; gap: 12px;`;
+export const CaptureButton = styled.Pressable<{ variant: "primary" | "secondary" }>`min-width: ${({ variant }) => variant === "primary" ? 190 : 110}px; height: 48px; padding: 0 20px; align-items: center; justify-content: center; border-radius: ${({ theme }) => theme.radii.md}px; border: 1px solid ${({ theme, variant }) => variant === "primary" ? theme.colors.primary : theme.colors.border}; background-color: ${({ theme, variant }) => variant === "primary" ? theme.colors.primary : theme.colors.surface};`;
+export const CaptureButtonText = styled.Text<{ variant: "primary" | "secondary" }>`font-family: ${({ theme }) => theme.fonts.semibold}; font-size: ${({ theme }) => theme.typography.bodySmall.size}px; color: ${({ theme, variant }) => variant === "primary" ? theme.colors.primaryForeground : theme.colors.foreground};`;

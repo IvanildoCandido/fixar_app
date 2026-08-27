@@ -20,7 +20,7 @@ async function main() {
     ["relatorio-sc-0101", generateMaintenanceHtml(simpleMaintenance, fixtureCompany)],
     ["relatorio-manutencao-completa-ficticia", generateMaintenanceHtml(completeMaintenance, fixtureCompany)],
     ["relatorio-manutencoes-consolidado", generateMultipleHtml([simpleMaintenance, completeMaintenance], period, fixtureCompany)],
-    ["orcamento-servicos", generateBudgetsHtml(budgetItems, [{ id: "part-budget", name: "Fita elastomérica", description: "Material previsto", price: 18.5, qtd: 2, total: 37 }], 397, fixtureCompany, simpleMaintenance.Customer, "Proposta válida por 15 dias. Agendamento sujeito à disponibilidade.")],
+    ["orcamento-servicos", generateBudgetsHtml(budgetItems, [{ id: "part-budget", name: "Fita elastomérica", description: "Material previsto", price: 18.5, qtd: 2, total: 37 }], 387, fixtureCompany, simpleMaintenance.Customer, "Proposta válida por 15 dias. Agendamento sujeito à disponibilidade.", { surcharge: 10, discount: 20 })],
   ];
   for (const [name, html] of documents) {
   await writeFile(join(previews, `${name}.html`), html, "utf8");

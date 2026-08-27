@@ -1,8 +1,11 @@
 import { supabase } from "./supabase";
+import { Page, Repair, RepairFilters } from "../types/data";
+import { cachedQuery, clearQueryCache, invalidateQueries } from "./queryCache";
 
 let activeOrganizationId: string | null = null;
 
 export function setActiveOrganizationId(organizationId: string | null) {
+  if (activeOrganizationId !== organizationId) clearQueryCache();
   activeOrganizationId = organizationId;
 }
 
@@ -109,22 +112,31 @@ function mapMaintenanceReminder(row: any) {
 }
 
 async function listCustomers() {
-  const result = await supabase.from("customers").select("*, assets(count)")
+  const organizationId = requireOrganization();
+  return cachedQuery(`customers:${organizationId}`, 300000, async () => {
+  const result = await supabase.from("customers").select("id, name, email, phone, address, document, assets(count)")
     .eq("organization_id", requireOrganization()).is("deleted_at", null).order("name");
   return unwrap<any[]>(result as any).map(mapCustomer);
+  });
 }
 
 async function listDevices() {
-  const result = await supabase.from("assets").select("*, Customer:customers(*)")
+  const organizationId = requireOrganization();
+  return cachedQuery(`devices:${organizationId}`, 300000, async () => {
+  const result = await supabase.from("assets").select("id, customer_id, reference, model, brand, location, equipment_type, serial_number, capacity_btu, voltage, phase, refrigerant, installed_at, Customer:customers(id, name, email, phone, address, document)")
     .eq("organization_id", requireOrganization()).is("deleted_at", null).order("reference");
   return unwrap<any[]>(result as any).map(mapDevice);
+  });
 }
 
 async function listCatalog(kind: "part" | "service") {
-  const result = await supabase.from("catalog_items").select("*")
+  const organizationId = requireOrganization();
+  return cachedQuery(`catalog:${organizationId}:${kind}`, 300000, async () => {
+  const result = await supabase.from("catalog_items").select("id, name, description, unit_price")
     .eq("organization_id", requireOrganization()).eq("kind", kind)
     .is("deleted_at", null).order("name");
   return unwrap<any[]>(result as any).map(mapCatalogItem);
+  });
 }
 
 async function listRepairs() {
@@ -135,22 +147,81 @@ async function listRepairs() {
   return unwrap<any[]>(result as any).map(mapRepair);
 }
 
-async function listMaintenanceReminders() {
-  const { data: authData, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  if (!authData.user) return [];
+const repairSummarySelect = "id, total, completed_at, created_at, comments, Customer:customers(id, name, email, phone, address, document), Device:assets(id, customer_id, reference, model, brand, location)";
+export async function listRepairSummaries(page = 0, pageSize = 20, filters: RepairFilters = {}): Promise<Page<Repair>> {
+  const organizationId = requireOrganization();
+  const key = `repair-summaries:${organizationId}:${page}:${pageSize}:${JSON.stringify(filters)}`;
+  return cachedQuery(key, 60000, async () => {
+    let query = supabase.from("work_orders").select(repairSummarySelect, { count: "exact" })
+      .eq("organization_id", organizationId).is("deleted_at", null)
+      .order("completed_at", { ascending: false, nullsFirst: false })
+      .order("id", { ascending: false });
+    if (filters.customerId) query = query.eq("customer_id", filters.customerId);
+    if (filters.deviceId) query = query.eq("asset_id", filters.deviceId);
+    if (filters.startAt) query = query.gte("completed_at", filters.startAt);
+    if (filters.endAt) query = query.lte("completed_at", filters.endAt);
+    const from = page * pageSize;
+    const result = await query.range(from, from + pageSize - 1);
+    if (result.error) throw result.error;
+    const items = (result.data ?? []).map(mapRepair);
+    const total = result.count ?? items.length;
+    return { items, total, page, pageSize, hasMore: from + items.length < total };
+  });
+}
 
-  const result = await supabase.from("work_orders")
-    .select("id, reminder_due_at, reminder_interval_days, Customer:customers(*), Device:assets(*)")
-    .eq("organization_id", requireOrganization())
-    .eq("assigned_to", authData.user.id)
+export async function getRepairDetail(id: string): Promise<Repair> {
+  const organizationId = requireOrganization();
+  return cachedQuery(`repair-detail:${organizationId}:${id}`, 300000, async () => {
+    const result = await supabase.from("work_orders")
+      .select("*, Customer:customers(*), Device:assets(*), work_order_items(*), work_order_technical_checks(*), work_order_measurements(*)")
+      .eq("organization_id", organizationId).eq("id", id).is("deleted_at", null).single();
+    return mapRepair(unwrap<any>(result as any));
+  });
+}
+export async function listRepairDetailsForReport(filters: RepairFilters = {}): Promise<Repair[]> {
+  const organizationId = requireOrganization();
+  let query = supabase.from("work_orders")
+    .select("*, Customer:customers(*), Device:assets(*), work_order_items(*), work_order_technical_checks(*), work_order_measurements(*)")
+    .eq("organization_id", organizationId).is("deleted_at", null).order("completed_at", { ascending: false });
+  if (filters.customerId) query = query.eq("customer_id", filters.customerId);
+  if (filters.deviceId) query = query.eq("asset_id", filters.deviceId);
+  if (filters.startAt) query = query.gte("completed_at", filters.startAt);
+  if (filters.endAt) query = query.lte("completed_at", filters.endAt);
+  const result = await query;
+  return unwrap<any[]>(result as any).map(mapRepair);
+}
+
+export type ReminderScope = "all" | "overdue" | "today" | "next7";
+export async function listMaintenanceRemindersPage(page = 0, pageSize = 20, scope: ReminderScope = "all") {
+  const { data: authData, error: authError } = await supabase.auth.getSession();
+  if (authError) throw authError;
+  if (!authData.session?.user) return { items: [], total: 0, page, pageSize, hasMore: false };
+
+  const organizationId = requireOrganization();
+  const userId = authData.session.user.id;
+  return cachedQuery(`reminders:${organizationId}:${userId}:${scope}:${page}:${pageSize}`, 60000, async () => {
+  const from = page * pageSize;
+  let query = supabase.from("work_orders")
+    .select("id, reminder_due_at, reminder_interval_days, Customer:customers(id, name, email, phone, address, document), Device:assets(id, customer_id, reference, model, brand, location)", { count: "exact" })
+    .eq("organization_id", organizationId)
+    .eq("assigned_to", userId)
     .eq("reminder_enabled", true)
     .not("reminder_due_at", "is", null)
-    .is("deleted_at", null)
-    .order("reminder_due_at", { ascending: true })
-    .limit(10);
-  return unwrap<any[]>(result as any).map(mapMaintenanceReminder);
+    .is("deleted_at", null);
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(start); tomorrow.setDate(tomorrow.getDate() + 1);
+  const nextWeek = new Date(start); nextWeek.setDate(nextWeek.getDate() + 8);
+  if (scope === "overdue") query = query.lt("reminder_due_at", start.toISOString());
+  if (scope === "today") query = query.gte("reminder_due_at", start.toISOString()).lt("reminder_due_at", tomorrow.toISOString());
+  if (scope === "next7") query = query.gte("reminder_due_at", tomorrow.toISOString()).lt("reminder_due_at", nextWeek.toISOString());
+  const result = await query.order("reminder_due_at", { ascending: true }).order("id", { ascending: true }).range(from, from + pageSize - 1);
+  const items = unwrap<any[]>(result as any).map(mapMaintenanceReminder);
+  const total = result.count ?? items.length;
+  return { items, total, page, pageSize, hasMore: from + items.length < total };
+  });
 }
+
+async function listMaintenanceReminders() { return (await listMaintenanceRemindersPage(0, 5)).items; }
 
 async function createRepair(payload: any) {
   const organizationId = requireOrganization();
@@ -229,7 +300,26 @@ async function createRepair(payload: any) {
       throw result.error;
     }
   }
+  invalidateQueries(`repair-summaries:${organizationId}`); invalidateQueries(`reminders:${organizationId}`);
   return order;
+}
+
+export async function createRepairsBatch(payload: any): Promise<Array<{ id: string; asset_id: string }>> {
+  const organizationId = requireOrganization();
+  const items = [
+    ...(payload.services ?? []).map((item: any) => ({ ...item, kind: "service" })),
+    ...(payload.parts ?? []).map((item: any) => ({ ...item, kind: "part" })),
+  ];
+  const subtotal = items.reduce((sum, item) => sum + Number(item.quantity ?? 1) * Number(item.price ?? 0), 0);
+  const result = await supabase.rpc("create_work_orders_batch", { payload: {
+    organizationId, customerId: payload.customerId, devices: payload.devices, assignedTo: payload.assignedTo,
+    comments: payload.comments, subtotal, total: Number(payload.total ?? subtotal), date: payload.date,
+    reminderEnabled: Boolean(payload.reminderEnabled), reminderIntervalDays: payload.reminderIntervalDays,
+    reminderDueAt: payload.reminderDueAt, items,
+  } });
+  if (result.error) throw result.error;
+  invalidateQueries(`repair-summaries:${organizationId}`); invalidateQueries(`reminders:${organizationId}`);
+  return (result.data ?? []) as Array<{ id: string; asset_id: string }>;
 }
 
 async function createQuote(payload: any) {
@@ -266,6 +356,7 @@ async function createQuote(payload: any) {
       throw result.error;
     }
   }
+  invalidateQueries(`quotes:${organizationId}`);
   return quote;
 }
 
@@ -291,6 +382,7 @@ const API = {
     if (path === "/customers/add") {
       const result = await supabase.from("customers")
         .insert({ organization_id: organizationId, ...payload }).select().single();
+      invalidateQueries(`customers:${organizationId}`);
       return { data: mapCustomer(unwrap<any>(result as any)) };
     }
     if (path === "/devices/add") {
@@ -309,6 +401,7 @@ const API = {
         refrigerant: payload.refrigerant || null,
         installed_at: payload.installedAt || null,
       }).select().single();
+      invalidateQueries(`devices:${organizationId}`); invalidateQueries(`customers:${organizationId}`);
       return { data: unwrap(result as any) };
     }
     if (path === "/parts/add" || path === "/services/add") {
@@ -320,6 +413,7 @@ const API = {
         description: payload.description || null,
         unit_price: Number(payload.price),
       }).select().single();
+      invalidateQueries(`catalog:${organizationId}:${kind}`);
       return { data: mapCatalogItem(unwrap<any>(result as any)) };
     }
     if (path === "/repairs/add") return { data: await createRepair(payload) };
@@ -339,7 +433,7 @@ const API = {
     if (path.startsWith("/customers/")) {
       unwrap((await supabase.from("customers").update(payload)
         .eq("organization_id", organizationId).eq("id", id)) as any);
-      return { data: true };
+      invalidateQueries(`customers:${organizationId}`); return { data: true };
     }
     if (path.startsWith("/devices/")) {
       unwrap((await supabase.from("assets").update({
@@ -356,7 +450,7 @@ const API = {
         refrigerant: payload.refrigerant || null,
         installed_at: payload.installedAt || null,
       }).eq("organization_id", organizationId).eq("id", id)) as any);
-      return { data: true };
+      invalidateQueries(`devices:${organizationId}`); invalidateQueries(`customers:${organizationId}`); return { data: true };
     }
     if (path.startsWith("/parts/") || path.startsWith("/services/")) {
       unwrap((await supabase.from("catalog_items").update({
@@ -364,7 +458,7 @@ const API = {
         description: payload.description || null,
         unit_price: Number(payload.price),
       }).eq("organization_id", organizationId).eq("id", id)) as any);
-      return { data: true };
+      invalidateQueries(`catalog:${organizationId}`); return { data: true };
     }
     throw new Error(`Rota não suportada: PUT ${path}`);
   },
@@ -379,6 +473,10 @@ const API = {
     if (!table) throw new Error(`Rota não suportada: DELETE ${path}`);
     unwrap((await supabase.from(table).update({ deleted_at: new Date().toISOString() })
       .eq("organization_id", organizationId).eq("id", id)) as any);
+    if (table === "customers") invalidateQueries(`customers:${organizationId}`);
+    if (table === "assets") { invalidateQueries(`devices:${organizationId}`); invalidateQueries(`customers:${organizationId}`); }
+    if (table === "catalog_items") invalidateQueries(`catalog:${organizationId}`);
+    if (table === "work_orders") { invalidateQueries(`repair-summaries:${organizationId}`); invalidateQueries(`repair-detail:${organizationId}:${id}`); invalidateQueries(`reminders:${organizationId}`); }
     return { data: true };
   },
 };

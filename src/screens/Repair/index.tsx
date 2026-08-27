@@ -24,7 +24,7 @@ import {
   InfoArea,
   CustomerName,
 } from "./styles";
-import { Alert, Modal } from "react-native";
+import { Alert, Modal, ScrollView } from "react-native";
 import { defaultCustomer, defaultDevice } from "../../utils/dafaultValues";
 import API from "../../services/API";
 import { ScannerQR } from "../../components/ScannerQR";
@@ -40,6 +40,7 @@ import { checksForServiceNames, makeDefaultChecks, maskedMoneyValue, withCalcula
 import { SignaturePad } from "../../components/SignaturePad";
 
 export const Repair = () => {
+  type SectionKey = "diagnosis" | "services" | "checks" | "measurements" | "parts" | "result" | "comments" | "values" | "signatures";
   const theme = useTheme();
   const route = useRoute<RouteProp<RootParamList, "Repair">>();
   const [selectedCustomer, setSelectedCustomer] =
@@ -61,11 +62,32 @@ export const Repair = () => {
   const [result, setResult] = useState<MaintenanceResult>({});
   const [technicianSignatureSvg, setTechnicianSignatureSvg] = useState("");
   const [customerSignatureSvg, setCustomerSignatureSvg] = useState("");
+  const [isSigning, setIsSigning] = useState(false);
+  const [openSection, setOpenSection] = useState<SectionKey | null>("diagnosis");
+  const contentRef = useRef<ScrollView>(null);
+  const sectionPositions = useRef<Partial<Record<SectionKey, number>>>({});
   const [customerSignerName, setCustomerSignerName] = useState("");
   const [total, setTotal] = useState(0);
   const navigation = useNavigation<any>();
   const [modal, setModal] = useState(false);
   const { session } = useAuth();
+
+  const scrollToSection = (section: SectionKey) => {
+    const y = sectionPositions.current[section];
+    if (y !== undefined) contentRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+  };
+  const sectionProps = (section: SectionKey) => ({
+    open: openSection === section,
+    onToggle: () => {
+      const next = openSection === section ? null : section;
+      setOpenSection(next);
+      if (next) setTimeout(() => scrollToSection(next), 80);
+    },
+    onLayout: (event: any) => {
+      sectionPositions.current[section] = event.nativeEvent.layout.y;
+      if (openSection === section) requestAnimationFrame(() => scrollToSection(section));
+    },
+  });
 
   useEffect(() => {
     const totalParts = parts.reduce((acc, value) => {
@@ -180,7 +202,7 @@ export const Repair = () => {
   return (
     <Container>
       <Header title={"Cadastro de Manutenções"} icons={true} />
-      <ContentArea automaticallyAdjustKeyboardInsets={true}>
+      <ContentArea ref={contentRef} automaticallyAdjustKeyboardInsets={true} scrollEnabled={!isSigning}>
         <ScanArea>
           <InfoArea>
             <Label>Referência do Equipamento:</Label>
@@ -192,24 +214,24 @@ export const Repair = () => {
             <QrCode size={22} color={theme.colors.primary} />
           </ButtonScan>
         </ScanArea>
-        <CollapsibleSection title="Diagnóstico" state={diagnosis.reportedProblem || diagnosis.foundCondition || diagnosis.technicalDiagnosis ? "complete" : "pending"}>
+        <CollapsibleSection {...sectionProps("diagnosis")} title="Diagnóstico" state={diagnosis.reportedProblem || diagnosis.foundCondition || diagnosis.technicalDiagnosis ? "complete" : "pending"}>
           <FormField label="Problema relatado" value={diagnosis.reportedProblem ?? ""} onChangeText={(reportedProblem) => setDiagnosis((value) => ({ ...value, reportedProblem }))} multiline placeholder="Relato curto do cliente" />
           <FormField label="Condição encontrada" value={diagnosis.foundCondition ?? ""} onChangeText={(foundCondition) => setDiagnosis((value) => ({ ...value, foundCondition }))} multiline placeholder="O que foi encontrado" />
           <FormField label="Diagnóstico técnico" value={diagnosis.technicalDiagnosis ?? ""} onChangeText={(technicalDiagnosis) => setDiagnosis((value) => ({ ...value, technicalDiagnosis }))} multiline placeholder="Conclusão técnica" />
         </CollapsibleSection>
-        <CollapsibleSection title="Serviços executados" state={services.length ? "complete" : "pending"} initiallyOpen>
+        <CollapsibleSection {...sectionProps("services")} title="Serviços executados" state={services.length ? "complete" : "pending"}>
           <SelectItens itens={services} setItens={setServices} dataTable="services" selectorLabel="Serviços realizados:" modalTitle="Serviços" />
         </CollapsibleSection>
-        <CollapsibleSection title="Verificações técnicas" state={checks.some((item) => item.status === "attention" || item.status === "non_conforming") ? "attention" : checks.some((item) => item.status !== "not_checked") ? "complete" : "pending"}>
+        <CollapsibleSection {...sectionProps("checks")} title="Verificações técnicas" state={checks.some((item) => item.status === "attention" || item.status === "non_conforming") ? "attention" : checks.some((item) => item.status !== "not_checked") ? "complete" : "pending"}>
           <TechnicalChecksEditor checks={checks} onChange={setChecks} />
         </CollapsibleSection>
-        <CollapsibleSection title="Medições" state={measurements.length ? "complete" : "pending"}>
+        <CollapsibleSection {...sectionProps("measurements")} title="Medições" state={measurements.length ? "complete" : "pending"}>
           <MeasurementsEditor measurements={measurements} onChange={(items) => setMeasurements(withCalculatedDeltaT(items))} />
         </CollapsibleSection>
-        <CollapsibleSection title="Peças e materiais" state={parts.length ? "complete" : "pending"}>
+        <CollapsibleSection {...sectionProps("parts")} title="Peças e materiais" state={parts.length ? "complete" : "pending"}>
           <SelectItens itens={parts} setItens={setParts} dataTable="parts" selectorLabel="Materiais utilizados:" modalTitle="Peças e materiais" />
         </CollapsibleSection>
-        <CollapsibleSection title="Resultado" state={result.equipmentStatus ? result.equipmentStatus === "operational_with_notes" || result.equipmentStatus === "requires_repair" || result.equipmentStatus === "out_of_service" ? "attention" : "complete" : "pending"}>
+        <CollapsibleSection {...sectionProps("result")} title="Resultado" state={result.equipmentStatus ? result.equipmentStatus === "operational_with_notes" || result.equipmentStatus === "requires_repair" || result.equipmentStatus === "out_of_service" ? "attention" : "complete" : "pending"}>
           <InfoText>Status do equipamento</InfoText>
           <ChoiceChips value={result.equipmentStatus} onChange={(equipmentStatus) => setResult((value) => ({ ...value, equipmentStatus }))} options={[{ value: "operational", label: "✓ Operacional" }, { value: "operational_with_notes", label: "⚠ Com ressalvas", tone: "warning" }, { value: "requires_repair", label: "✕ Requer reparo", tone: "danger" }, { value: "out_of_service", label: "✕ Fora de operação", tone: "danger" }]} />
           <InfoText>Problema resolvido</InfoText>
@@ -220,18 +242,18 @@ export const Repair = () => {
           <FormField label="Recomendação ao cliente (opcional)" value={result.customerRecommendation ?? ""} onChangeText={(customerRecommendation) => setResult((value) => ({ ...value, customerRecommendation }))} multiline />
           {result.customerRecommendation ? <><InfoText>Prioridade</InfoText><ChoiceChips value={result.recommendationPriority} onChange={(recommendationPriority) => setResult((value) => ({ ...value, recommendationPriority }))} options={[{ value: "low", label: "Baixa" }, { value: "normal", label: "Normal" }, { value: "high", label: "Alta", tone: "warning" }, { value: "urgent", label: "Urgente", tone: "danger" }]} /></> : null}
         </CollapsibleSection>
-        <CollapsibleSection title="Observações técnicas" state={comments ? "complete" : "pending"}>
+        <CollapsibleSection {...sectionProps("comments")} title="Observações técnicas" state={comments ? "complete" : "pending"}>
           <TextArea multiline numberOfLines={4} onChangeText={setComments} value={comments} placeholder="Opcional" />
         </CollapsibleSection>
-        <CollapsibleSection title="Valores e próxima manutenção" state="complete">
+        <CollapsibleSection {...sectionProps("values")} title="Valores e próxima manutenção" state="complete">
           <EntriesArea><Side><Input value={discount} label="Descontos:" placeholder="R$ 0,00" keyboardType="numeric" onChangeText={setDiscount} type="money" rawValue={discountRaw} /></Side><Side><Input value={increment} label="Acréscimos" placeholder="R$ 0,00" keyboardType="numeric" onChangeText={setIncrement} type="money" rawValue={incrementRaw} /></Side></EntriesArea>
           <CheckBox title="Recomendar próxima manutenção" checked={notification} setChecked={setNotification} />
           {notification ? <FormField label="Prazo para a próxima manutenção (dias)" value={reminderDays} onChangeText={(value) => { setReminderDays(value.replace(/\D/g, "")); setReminderError(""); }} keyboardType="number-pad" placeholder="30, 60, 90, 180..." error={reminderError} required /> : null}
         </CollapsibleSection>
-        <CollapsibleSection title="Assinaturas" state={technicianSignatureSvg || customerSignatureSvg ? "complete" : "pending"}>
-          <SignaturePad label={`Responsável técnico${session?.user.name ? `: ${session.user.name}` : ""}`} value={technicianSignatureSvg} onChange={setTechnicianSignatureSvg} />
+        <CollapsibleSection {...sectionProps("signatures")} title="Assinaturas" state={technicianSignatureSvg || customerSignatureSvg ? "complete" : "pending"}>
+          <SignaturePad label={`Responsável técnico${session?.user.name ? `: ${session.user.name}` : ""}`} value={technicianSignatureSvg} onChange={setTechnicianSignatureSvg} onDrawingChange={setIsSigning} />
           <FormField label="Nome do cliente / responsável" value={customerSignerName} onChangeText={setCustomerSignerName} placeholder="Opcional" />
-          <SignaturePad label="Cliente / responsável" value={customerSignatureSvg} onChange={setCustomerSignatureSvg} />
+          <SignaturePad label="Cliente / responsável" value={customerSignatureSvg} onChange={setCustomerSignatureSvg} onDrawingChange={setIsSigning} />
         </CollapsibleSection>
         <TotalArea>
           <TotalLabel>TOTAL:</TotalLabel>

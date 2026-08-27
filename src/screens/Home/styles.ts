@@ -29,9 +29,10 @@ export const SectionTitle = styled.Text`
   margin: 8px 0 14px; font-family: ${({ theme }) => theme.fonts.bold}; font-size: 16px;
   color: ${({ theme }) => theme.colors.ink};
 `;
-export const Stats = styled.View`flex-direction: row; gap: 10px; margin-bottom: 22px;`;
+export const SectionHeaderRow = styled.View`flex-direction:row;align-items:center;justify-content:space-between;`;
+export const SectionLink = styled.Text`font-family:${({ theme }) => theme.fonts.semibold};font-size:${({ theme }) => theme.typography.bodySmall.size}px;color:${({ theme }) => theme.colors.primary};`;
 export const ReminderList = styled.View`gap: 10px; margin-bottom: 22px;`;
-export const ReminderCard = styled.View`
+export const ReminderCard = styled.TouchableOpacity`
   min-height: 68px; flex-direction: row; align-items: center; gap: 12px; padding: 12px 14px;
   border-radius: ${({ theme }) => theme.radii.lg}px; border: 1px solid ${({ theme }) => theme.colors.border};
   background-color: ${({ theme }) => theme.colors.card};
@@ -53,17 +54,6 @@ export const ReminderDate = styled.Text<{ due: boolean }>`
 export const ReminderEmpty = styled.Text`
   padding: 14px; font-family: ${({ theme }) => theme.fonts.regular};
   font-size: ${({ theme }) => theme.typography.bodySmall.size}px; color: ${({ theme }) => theme.colors.muted};
-`;
-export const StatCard = styled.View`
-  flex: 1; min-height: 104px; padding: 15px 12px; border-radius: 18px;
-  border: 1px solid ${({ theme }) => theme.colors.border}; background-color: ${({ theme }) => theme.colors.card};
-`;
-export const StatNumber = styled.Text`
-  font-family: ${({ theme }) => theme.fonts.bold}; font-size: 25px; color: ${({ theme }) => theme.colors.primary};
-`;
-export const StatLabel = styled.Text`
-  margin-top: 7px; font-family: ${({ theme }) => theme.fonts.regular}; font-size: 10px;
-  line-height: 15px; color: ${({ theme }) => theme.colors.muted};
 `;
 export const ActionsGrid = styled.View`flex-direction: row; flex-wrap: wrap; gap: 12px;`;
 export const ButtonsArea = styled.View`

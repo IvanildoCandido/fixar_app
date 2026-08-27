@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Header } from "../../components/Header";
 import { Modal } from "react-native";
 
@@ -11,6 +11,7 @@ import { Customer, CustomerDevices, CustomerStats } from "../../types/data";
 import { Loading } from "../../components/Loading";
 import { useFocusEffect } from "@react-navigation/native";
 import { EmptyState, ErrorState, SearchInput } from "../../design-system";
+import { invalidateQueries } from "../../services/queryCache";
 
 export const defaultData = {
   id: "",
@@ -22,12 +23,14 @@ export const defaultData = {
 };
 
 export const Customers = () => {
+  const listRef = useRef<any>(null);
   const [customerModal, setCustomerModal] = useState(false);
   const [customers, setCustomers] = useState<CustomerStats[]>([]);
   const [dataEdit, setDataEdit] = useState(defaultData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleModalOpen = () => {
     setCustomerModal(true);
@@ -39,21 +42,27 @@ export const Customers = () => {
     try {
       const { data } = await API.get("/customers/list");
       setCustomers(data);
-      setLoading(false);
     } catch (error) {
       console.log(error);
       setError("Não foi possível carregar a lista de clientes.");
+    } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
       loadCustomers();
       return () => {};
     }, [customerModal])
   );
+  const refreshCustomers = () => {
+    invalidateQueries("customers:");
+    setRefreshing(true);
+    loadCustomers();
+  };
   const filteredCustomers = useMemo(() => {
     const term = query.trim().toLocaleLowerCase("pt-BR");
     if (!term) return customers;
@@ -70,7 +79,10 @@ export const Customers = () => {
         <ErrorState description={error} />
       ) : (
         <CustomersList
+          ref={listRef}
           data={filteredCustomers}
+          refreshing={refreshing}
+          onRefresh={refreshCustomers}
           renderItem={({ item }: { item: CustomerStats }) => (
             <CustomerItem
               id={item.id}

@@ -10,6 +10,7 @@ import { useAuth } from "../auth/AuthContext";
 import { Login } from "../screens/Login";
 import { OrganizationSetup } from "../screens/OrganizationSetup";
 import { OrganizationProfile } from "../screens/OrganizationProfile";
+import { MaintenanceReminders } from "../screens/MaintenanceReminders";
 
 const { Navigator, Screen } = createStackNavigator();
 
@@ -40,6 +41,7 @@ export const MainRoutes = () => {
           <Screen name="FinishedServices" component={FinishedServices} />
           <Screen name="Budgets" component={Budgets} />
           <Screen name="OrganizationProfile" component={OrganizationProfile} />
+          <Screen name="MaintenanceReminders" component={MaintenanceReminders} />
         </>
       )}
     </Navigator>

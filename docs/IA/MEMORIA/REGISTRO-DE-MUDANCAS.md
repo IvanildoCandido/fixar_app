@@ -85,3 +85,47 @@ Este registro complementa, mas não substitui, o histórico Git.
 - Unificados relatório individual, consolidado de múltiplas manutenções e orçamento em um mesmo layout A4 baseado no modelo visual fornecido, preservando as diferenças de conteúdo de cada documento.
 - Adicionados testes de regressão do cálculo inicial e do contrato visual comum aos três modelos.
 - Typecheck, sete testes, export iOS e quatro PDFs de uma página foram aprovados; os quatro renders foram inspecionados visualmente sem cortes ou sobreposição.
+
+## 2026-08-27 — Atalhos da Home, rolagem e captura de assinatura
+
+- Os indicadores da Home passaram a abrir os fluxos correspondentes e cada lembrete inicia uma manutenção com cliente e equipamento previamente selecionados.
+- Home, peças, equipamentos, serviços e clientes retornam ao topo sempre que a tela recupera foco após troca de aba ou retorno.
+- A captura de assinatura passou a suspender a rolagem durante o traço, recusar transferência indevida do gesto e usar a largura medida do quadro.
+- Typecheck, sete testes, export do bundle iOS e geração dos quatro PDFs em uma página foram aprovados.
+
+## 2026-08-27 — Assinatura em tela cheia horizontal
+
+- O quadro compacto de assinatura passou a funcionar como prévia e acionador de uma captura em tela cheia no modo horizontal.
+- A captura ampliada oferece limpar, cancelar sem perder a assinatura anterior e confirmar; ao fechar, o aplicativo restaura retrato e a rolagem do formulário.
+- Adicionado `expo-screen-orientation` compatível com o Expo SDK 54.
+- Typecheck, sete testes e export do bundle iOS foram aprovados.
+
+## 2026-08-27 — Simplificação da Home
+
+- Removida a seção `Hoje`, que mostrava indicadores fixos ou sem listagens próprias e duplicava destinos das ações rápidas.
+- A Home passou a começar pelas próximas manutenções, seguida das ações rápidas com fluxos reais e distintos.
+
+## 2026-08-27 — Acordeão guiado no cadastro de manutenção
+
+- As nove seções do formulário de manutenção passaram a compartilhar um único estado de expansão; abrir uma seção fecha automaticamente a anterior.
+- Depois da recomposição do layout, a seção aberta é rolada suavemente para perto do topo, mantendo cabeçalho e conteúdo em evidência.
+- `Diagnóstico`, primeira etapa do fluxo técnico, é a seção aberta inicialmente.
+- Typecheck, sete testes e export do bundle iOS foram aprovados.
+
+## 2026-08-27 — Quantidades e observações no orçamento
+
+- Serviços e materiais selecionados passam a entrar com quantidade mínima 1 e controles acessíveis de menos/mais, sem digitação manual.
+- Quantidade, subtotal por item e total geral são recalculados imediatamente, preservando quantidades existentes ao adicionar novos itens.
+- Adicionado campo visível de observações, persistido nas notas do orçamento e apresentado no PDF.
+- O PDF de orçamento passou a detalhar também descontos e acréscimos; typecheck, oito testes, uma página renderizada e export iOS foram aprovados.
+- Ao tocar em menos quando a quantidade já é 1, o formulário confirma e remove o item diretamente, sem exigir retorno ao seletor.
+
+## 2026-08-27 — Paginação, cache e gravação de ordens em lote
+
+- O histórico deixou de baixar milhares de ordens completas: passou a carregar resumos em páginas de 20, filtrar no servidor e buscar relações, itens, verificações e medições somente quando necessários para relatórios.
+- Criada uma listagem paginada de lembretes com filtros por vencidas, hoje e próximos sete dias; a Home consulta apenas os cinco primeiros registros e mostra acesso ao total.
+- Adicionado cache em memória com TTL, deduplicação de chamadas concorrentes, invalidação por recurso e métricas de consulta para clientes, equipamentos, catálogo, relatórios e páginas operacionais.
+- Listas de clientes, equipamentos, peças e serviços mantêm os dados durante revisitas e oferecem atualização explícita por gesto, reduzindo recargas visuais e tráfego redundante.
+- Ordens em lote passaram de uma requisição por equipamento para a RPC transacional `create_work_orders_batch`.
+- Aplicada e validada via MCP a migration `20260827130000_performance_and_batch_orders.sql`, com cinco índices voltados a histórico, filtros, lembretes e catálogo; o projeto remoto tinha 3.175 ordens no momento da auditoria.
+- Typecheck, dez testes automatizados, verificação de diff e export do bundle iOS foram aprovados.

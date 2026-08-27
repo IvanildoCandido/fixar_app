@@ -22,7 +22,7 @@ import {
 } from "./styles";
 import { Alert } from "react-native";
 import { defaultCustomer } from "../../utils/dafaultValues";
-import API from "../../services/API";
+import { createRepairsBatch } from "../../services/API";
 import { SelectCustomers } from "../../components/Form/SelectCustomers";
 import { SelectMultiDevices } from "../../components/Form/SelectMultiDevices";
 import { FormField } from "../../design-system";
@@ -54,10 +54,10 @@ export const MultiRepair = () => {
 
   useEffect(() => {
     const totalParts = parts.reduce((acc, value) => {
-      return acc + parseFloat(value.price);
+      return acc + parseFloat(value.price) * Number(value.quantity ?? 1);
     }, 0);
     const totalServices = services.reduce((acc, value) => {
-      return acc + parseFloat(value.price);
+      return acc + parseFloat(value.price) * Number(value.quantity ?? 1);
     }, 0);
     setTotal(
       totalServices +
@@ -68,6 +68,14 @@ export const MultiRepair = () => {
   }, [parts, services, increment, discount]);
 
   const handlerRegister = async () => {
+    if (!selectedCustomer.id) {
+      Alert.alert("Cliente obrigatório", "Selecione o cliente antes de salvar as manutenções.");
+      return;
+    }
+    if (!devices.length) {
+      Alert.alert("Equipamento obrigatório", "Selecione pelo menos um equipamento.");
+      return;
+    }
     const intervalDays = Number(reminderDays);
     if (notification && (!Number.isInteger(intervalDays) || intervalDays < 1)) {
       setReminderError("Informe um prazo válido, em dias.");
@@ -88,31 +96,18 @@ export const MultiRepair = () => {
           onPress: async () => {
             try {
               const notificationFailures: string[] = [];
+              const completedAt = new Date();
+              const reminderDueAt = notification ? calculateReminderDueDate(intervalDays, completedAt) : null;
+              const createdOrders = await createRepairsBatch({ customerId: selectedCustomer.id, devices, services, parts, comments, total, date: completedAt.toISOString(), assignedTo: session?.user.id, reminderEnabled: notification, reminderIntervalDays: notification ? intervalDays : null, reminderDueAt: reminderDueAt?.toISOString() ?? null });
               for (const device of devices as Device[]) {
                 const reminderDevice: Device = {
                   ...device,
                   Customer: selectedCustomer,
                 };
-                const completedAt = new Date();
-                const reminderDueAt = notification
-                  ? calculateReminderDueDate(intervalDays, completedAt)
-                  : null;
-                const newRepair = {
-                  customerId: selectedCustomer.id,
-                  deviceId: device.id,
-                  services,
-                  parts,
-                  comments,
-                  total,
-                  date: completedAt,
-                  assignedTo: session?.user.id,
-                  reminderEnabled: notification,
-                  reminderIntervalDays: notification ? intervalDays : null,
-                  reminderDueAt: reminderDueAt?.toISOString() ?? null,
-                };
-                const { data: workOrder } = await API.post("/repairs/add", newRepair);
                 if (notification && reminderDueAt) {
                   try {
+                    const workOrder = createdOrders.find((order) => order.asset_id === device.id);
+                    if (!workOrder) throw new Error("Ordem do equipamento não retornada.");
                     await scheduleMaintenanceReminder({
                       device: reminderDevice,
                       dueDate: reminderDueAt,

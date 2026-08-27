@@ -1,17 +1,18 @@
 import { BarChart3, Bell, Building2, ClipboardCheck, FileText, LogOut, Moon, Sun, Wrench } from "lucide-react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { ScrollView } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import { useFixarTheme } from "../../design-system";
 import { useTheme } from "styled-components/native";
-import API from "../../services/API";
+import { listMaintenanceRemindersPage } from "../../services/API";
 import { MaintenanceReminder } from "../../types/data";
 import {
   Action, ActionIcon, ActionLabel, ActionsGrid, CompanyBadge, CompanyName,
   Container, Content, Greeting, Header, HeaderTop, Kicker, SectionTitle,
-  SignOutButton, StatCard, StatLabel, StatNumber, Stats, Subtitle,
+  SignOutButton, Subtitle,
   ReminderCard, ReminderContent, ReminderDate, ReminderEmpty, ReminderList,
-  ReminderMeta, ReminderTitle,
+  ReminderMeta, ReminderTitle, SectionHeaderRow, SectionLink,
 } from "./styles";
 
 const actions = [
@@ -28,13 +29,16 @@ export const Home = () => {
   const { resolvedTheme, toggleTheme } = useFixarTheme();
   const theme = useTheme();
   const [reminders, setReminders] = useState<MaintenanceReminder[]>([]);
+  const [remindersTotal, setRemindersTotal] = useState(0);
+  const contentRef = useRef<ScrollView>(null);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      API.get("/reminders/list")
-        .then(({ data }) => {
-          if (active) setReminders(data);
+      contentRef.current?.scrollTo({ y: 0, animated: false });
+      listMaintenanceRemindersPage(0, 5)
+        .then((result) => {
+          if (active) { setReminders(result.items); setRemindersTotal(result.total); }
         })
         .catch(() => {
           if (active) setReminders([]);
@@ -42,8 +46,6 @@ export const Home = () => {
       return () => { active = false; };
     }, [])
   );
-
-  const dueReminders = reminders.filter((reminder) => new Date(reminder.dueAt).getTime() <= Date.now());
 
   const reminderDateLabel = (dueAt: string) => {
     const dueDate = new Date(dueAt);
@@ -76,17 +78,11 @@ export const Home = () => {
         <Subtitle>Visão rápida da sua operação de serviços.</Subtitle>
       </Header>
 
-      <Content showsVerticalScrollIndicator={false}>
-        <SectionTitle>Hoje</SectionTitle>
-        <Stats>
-          <StatCard><StatNumber>0</StatNumber><StatLabel>ordens abertas</StatLabel></StatCard>
-          <StatCard><StatNumber>{dueReminders.length}</StatNumber><StatLabel>manutenções no prazo</StatLabel></StatCard>
-          <StatCard><StatNumber>0</StatNumber><StatLabel>aguardando aprovação</StatLabel></StatCard>
-        </Stats>
-        <SectionTitle>Próximas manutenções</SectionTitle>
+      <Content ref={contentRef} showsVerticalScrollIndicator={false}>
+        <SectionHeaderRow><SectionTitle>Próximas manutenções</SectionTitle>{remindersTotal > 5 ? <SectionLink onPress={() => navigation.navigate("MaintenanceReminders")}>Ver todas ({remindersTotal})</SectionLink> : null}</SectionHeaderRow>
         <ReminderList>
           {reminders.length ? reminders.slice(0, 5).map((reminder) => (
-            <ReminderCard key={reminder.id}>
+            <ReminderCard key={reminder.id} accessibilityRole="button" accessibilityLabel={`Iniciar manutenção de ${reminder.Device.reference}`} onPress={() => navigation.navigate("Repair", { customer: reminder.Customer, device: reminder.Device })}>
               <Bell size={20} color={new Date(reminder.dueAt).getTime() <= Date.now() ? theme.colors.warning : theme.colors.primary} />
               <ReminderContent>
                 <ReminderTitle>{reminder.Device.reference}</ReminderTitle>

@@ -22,6 +22,7 @@ import { useTheme } from "styled-components/native";
 import { Customer, Device, Part, Service } from "../../types/data";
 import { Alert } from "react-native";
 import API from "../../services/API";
+import { getRepairDetail } from "../../services/API";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../../auth/AuthContext";
 import { loadReportCompany } from "../../services/reportCompany";
@@ -39,6 +40,7 @@ interface Props {
   date: string;
   total: string;
   setDevicesModal: React.Dispatch<SetStateAction<boolean>>;
+  onDeleted?: (id: string) => void;
 }
 
 export const RepairItem = ({
@@ -54,6 +56,7 @@ export const RepairItem = ({
   comments,
   total,
   setDevicesModal,
+  onDeleted,
 }: Props) => {
   const theme = useTheme();
   const navigation = useNavigation<any>();
@@ -80,7 +83,7 @@ export const RepairItem = ({
           onPress: async () => {
             try {
               await API.delete(`/repairs/${id}`);
-              setReload(!reload);
+              onDeleted?.(id);
             } catch (error) {
               console.log(error);
               Alert.alert(
@@ -99,7 +102,8 @@ export const RepairItem = ({
     try {
       if (!session) throw new Error("Empresa ativa não encontrada.");
       const company = await loadReportCompany(session.organization);
-      const html = generateMaintenanceHtml({ ...repair, technicianName: repair.technicianName || session.user.name }, company);
+      const detail = await getRepairDetail(id);
+      const html = generateMaintenanceHtml({ ...detail, technicianName: detail.technicianName || session.user.name }, company);
       await printToFile(html);
     } catch (error) {
       Alert.alert("Relatório não gerado", error instanceof Error ? error.message : "Tente novamente.");

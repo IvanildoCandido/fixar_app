@@ -1,24 +1,20 @@
 import { SetStateAction, useState } from "react";
 import { Button, FormModal } from "../../design-system";
-import { Customer, Device, Period, Repair } from "../../types/data";
+import { Customer, Device, Period, RepairFilters } from "../../types/data";
 import { defaultCustomer, defaultDevice } from "../../utils/dafaultValues";
 import { SelectCustomers } from "../Form/SelectCustomers";
 import { SelectDevices } from "../Form/SelectDevices";
 import { SelectPeriod } from "../Form/SelectPeriod";
-import API from "../../services/API";
-import { isBetween } from "../../utils/getPlatformDate";
 
 interface ModalProps {
   closeModal: React.Dispatch<SetStateAction<boolean>>;
-  setFiltered: React.Dispatch<SetStateAction<Repair[]>>;
   selectedPeriod: Period;
   setSelectedPeriod: React.Dispatch<SetStateAction<Period>>;
-  onFiltersApplied: () => void;
+  onFiltersApplied: (filters: RepairFilters) => void;
 }
 
 export const SetFilter = ({
   closeModal,
-  setFiltered,
   selectedPeriod,
   setSelectedPeriod,
   onFiltersApplied,
@@ -27,30 +23,14 @@ export const SetFilter = ({
     useState<Customer>(defaultCustomer);
   const [selectedDevice, setSelectedDevice] = useState<Device>(defaultDevice);
 
-  const getFiltered = async (
+  const applyFilters = (
     customer?: Customer,
     device?: Device,
     period?: Period
   ) => {
-    const { data } = await API.get("/repairs/list");
-    let filter = data;
-    if (customer?.id) {
-      filter = data.filter(
-        (repair: Repair) => repair.Customer.id === customer?.id
-      );
-    }
-    if (device?.id) {
-      filter = filter.filter(
-        (repair: Repair) => repair.Device.id === device?.id
-      );
-    }
-    if (period?.start) {
-      filter = filter.filter((repair: Repair) =>
-        isBetween(selectedPeriod, repair.date)
-      );
-    }
-    setFiltered(filter);
-    onFiltersApplied();
+    const end = period?.end ? new Date(period.end) : undefined;
+    if (end) end.setHours(23, 59, 59, 999);
+    onFiltersApplied({ customerId: customer?.id || undefined, deviceId: device?.id || undefined, startAt: period?.start ? new Date(period.start).toISOString() : undefined, endAt: end?.toISOString() });
     closeModal(false);
   };
 
@@ -59,7 +39,7 @@ export const SetFilter = ({
   };
 
   return (
-    <FormModal title="Filtrar ordens" description="Combine cliente, equipamento e período para refinar os resultados." onClose={handleButtonCancel} footer={<><Button style={{ flex: 1 }} label="Cancelar" variant="secondary" onPress={handleButtonCancel} /><Button style={{ flex: 1 }} label="Aplicar filtros" onPress={() => getFiltered(selectedCustomer, selectedDevice, selectedPeriod)} /></>}>
+    <FormModal title="Filtrar ordens" description="Combine cliente, equipamento e período para refinar os resultados." onClose={handleButtonCancel} footer={<><Button style={{ flex: 1 }} label="Cancelar" variant="secondary" onPress={handleButtonCancel} /><Button style={{ flex: 1 }} label="Aplicar filtros" onPress={() => applyFilters(selectedCustomer, selectedDevice, selectedPeriod)} /></>}>
           <SelectCustomers
             selected={selectedCustomer}
             setSelected={setSelectedCustomer}

@@ -1,4 +1,5 @@
 import { ReactNode, useState } from "react";
+import { LayoutChangeEvent } from "react-native";
 import { Check, ChevronDown, ChevronUp, Circle, TriangleAlert } from "lucide-react-native";
 import { useTheme } from "styled-components/native";
 import { FormField } from "../../design-system";
@@ -6,10 +7,13 @@ import { TechnicalCheck, TechnicalCheckStatus, TechnicalMeasurement } from "../.
 import { AIR_CONDITIONING_MEASUREMENTS, MeasurementDefinition } from "../../domain/technicalMaintenance";
 import { CheckLabel, CheckRow, Chip, Chips, ChipText, Helper, InlineAction, InlineActionText, MeasurementField, MeasurementRow, Section, SectionBody, SectionHeader, SectionMarker, SectionTitle, Unit } from "./styles";
 
-export function CollapsibleSection({ title, state = "pending", initiallyOpen = false, children }: { title: string; state?: "complete" | "pending" | "attention"; initiallyOpen?: boolean; children: ReactNode }) {
-  const [open, setOpen] = useState(initiallyOpen); const theme = useTheme();
+export function CollapsibleSection({ title, state = "pending", open, onToggle, onLayout, initiallyOpen = false, children }: { title: string; state?: "complete" | "pending" | "attention"; open?: boolean; onToggle?: () => void; onLayout?: (event: LayoutChangeEvent) => void; initiallyOpen?: boolean; children: ReactNode }) {
+  const theme = useTheme();
+  const [internalOpen, setInternalOpen] = useState(initiallyOpen);
+  const expanded = open ?? internalOpen;
+  const toggle = onToggle ?? (() => setInternalOpen((value) => !value));
   const Marker = state === "complete" ? Check : state === "attention" ? TriangleAlert : Circle;
-  return <Section><SectionHeader accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((value) => !value)}><SectionMarker $state={state}><Marker size={15} color={state === "attention" ? theme.colors.danger : theme.colors.primary} /></SectionMarker><SectionTitle>{title}</SectionTitle>{open ? <ChevronUp size={20} color={theme.colors.muted} /> : <ChevronDown size={20} color={theme.colors.muted} />}</SectionHeader>{open ? <SectionBody>{children}</SectionBody> : null}</Section>;
+  return <Section onLayout={onLayout}><SectionHeader accessibilityRole="button" accessibilityState={{ expanded }} onPress={toggle}><SectionMarker $state={state}><Marker size={15} color={state === "attention" ? theme.colors.danger : theme.colors.primary} /></SectionMarker><SectionTitle>{title}</SectionTitle>{expanded ? <ChevronUp size={20} color={theme.colors.muted} /> : <ChevronDown size={20} color={theme.colors.muted} />}</SectionHeader>{expanded ? <SectionBody>{children}</SectionBody> : null}</Section>;
 }
 
 const CHECK_OPTIONS: Array<{ value: TechnicalCheckStatus; label: string; tone?: "default" | "warning" | "danger" }> = [

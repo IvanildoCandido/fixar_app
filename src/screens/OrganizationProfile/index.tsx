@@ -7,6 +7,7 @@ import { Header } from "../../components/Header";
 import { Button, FormField } from "../../design-system";
 import { useAuth } from "../../auth/AuthContext";
 import { supabase } from "../../services/supabase";
+import { invalidateQueries } from "../../services/queryCache";
 import { Actions, Container, Content, Help, LogoCard, LogoPlaceholder, LogoPreview } from "./styles";
 
 type Fields = { name: string; legal_name: string; document: string; email: string; phone: string; address: string };
@@ -54,6 +55,7 @@ export function OrganizationProfile() {
         email: fields.email.trim() || null, phone: fields.phone.trim() || null, address: fields.address.trim() || null,
       }).eq("id", organization.id);
       if (error) throw error;
+      invalidateQueries(`report-company:${organization.id}`);
 
       if (logoAsset) {
         const contentType = logoAsset.mimeType ?? "image/jpeg";

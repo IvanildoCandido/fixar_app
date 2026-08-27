@@ -1,6 +1,6 @@
 # Estado atual
 
-**Snapshot observado:** `2026-08-26`  
+**Snapshot observado:** `2026-08-27`
 **Branch observada:** `main`  
 **Commit-base observado:** repositório novo, ainda sem commits
 
@@ -37,6 +37,13 @@ Este documento descreve o worktree observado, não produção.
 - Características técnicas reutilizáveis passaram a pertencer ao equipamento; verificações, medições, diagnóstico, resultado e assinaturas são persistidos de forma estruturada na ordem. A migration `20260826180000_technical_maintenance.sql` foi aplicada e validada no Supabase de desenvolvimento.
 - Relatório individual, consolidado de múltiplas manutenções e orçamento compartilham o mesmo layout A4 baseado na referência visual, com cabeçalho, cards, assinaturas, faixa institucional e rodapé padronizados; quatro fixtures foram verificadas em uma página e inspecionadas visualmente.
 - A abertura de nova ordem não depende mais da montagem prévia dos campos monetários; o cálculo aceita refs ainda nulas e valores formatados em pt-BR.
+- A Home prioriza próximas manutenções e ações rápidas reais, sem indicadores fixos ou duplicados; lembretes iniciam a manutenção com cliente/equipamento preenchidos, e Home/listas das cinco abas retornam ao topo ao recuperar foco.
+- A captura de assinatura abre um modal em tela cheia horizontal, usa toda a área disponível e oferece limpar, cancelar e confirmar; a orientação e a rolagem do formulário são restauradas ao fechar.
+- As seções do cadastro de manutenção funcionam como acordeão exclusivo: abrir uma fecha as demais e reposiciona suavemente a seção ativa próxima ao topo.
+- Orçamentos iniciam serviços e materiais selecionados com quantidade 1, usam controles de incremento/decremento e confirmam a remoção ao reduzir um item que está em 1; aceitam observações e levam quantidades, ajustes e notas ao PDF.
+- Histórico de manutenções e lembretes usam paginação no servidor; filtros de cliente, equipamento e período são aplicados no Supabase, e detalhes pesados só são consultados ao gerar/abrir um relatório.
+- Consultas estáveis de clientes, equipamentos, catálogo, perfil da empresa e páginas operacionais têm cache com TTL, deduplicação de requisições simultâneas, invalidação após escrita e métricas locais; listas de cadastro aceitam atualização manual sem piscar a tela a cada foco.
+- Ordens em lote são gravadas pela RPC transacional `create_work_orders_batch`, substituindo várias chamadas sequenciais. A migration `20260827130000_performance_and_batch_orders.sql` foi aplicada no Supabase de desenvolvimento com índices para histórico, filtros, lembretes e catálogo.
 
 ## Limitações da descoberta
 
@@ -46,4 +53,5 @@ Este documento descreve o worktree observado, não produção.
 - Convites, troca entre múltiplas organizações, upload de anexos e matriz detalhada de permissões ainda precisam ser implementados no aplicativo.
 - A migração visual é incremental: telas operacionais ainda usam componentes legados; estados de sync são apenas componentes visuais até existir uma fonte real de sincronização/offline.
 - Configuração de publicação e credenciais EAS permanecem pendentes.
+- Os índices novos ainda precisam acumular tráfego real antes de uma comparação confiável de uso pelo advisor; o linter os classifica como não utilizados imediatamente após sua criação, o que é esperado.
 - O lembrete de manutenção usa notificação local do dispositivo. Push remoto para outros aparelhos ainda exige persistência de Expo Push Tokens, serviço emissor e agendamento seguro no backend `[PENDENTE DE CONFIRMAÇÃO]`.

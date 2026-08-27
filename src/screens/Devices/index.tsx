@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Header } from "../../components/Header";
 import { Modal } from "react-native";
 
@@ -12,6 +12,7 @@ import API from "../../services/API";
 import { Loading } from "../../components/Loading";
 import { useFocusEffect } from "@react-navigation/native";
 import { EmptyState, ErrorState, SearchInput } from "../../design-system";
+import { invalidateQueries } from "../../services/queryCache";
 
 export interface DeviceProps {
   Customer: Customer;
@@ -38,11 +39,13 @@ export const defaultData: DeviceProps = {
 };
 
 export const Devices = () => {
+  const listRef = useRef<any>(null);
   const [devicesModal, setDevicesModal] = useState(false);
   const [devices, setDevices] = useState<DeviceProps[]>([]);
   const [dataEdit, setDataEdit] = useState(defaultData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(""); const [query, setQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleModalOpen = () => {
     setDevicesModal(true);
@@ -54,20 +57,27 @@ export const Devices = () => {
     try {
       const { data } = await API.get("/devices/list");
       setDevices(data);
-      setLoading(false);
     } catch (error) {
       console.log(error);
-      setError("Não foi possível carregar a lista de equipamentos."); setLoading(false);
+      setError("Não foi possível carregar a lista de equipamentos.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
+      listRef.current?.scrollToOffset({ offset: 0, animated: false });
       loadDevices();
       return () => {};
     }, [devicesModal])
   );
+  const refreshDevices = () => {
+    invalidateQueries("devices:");
+    setRefreshing(true);
+    loadDevices();
+  };
   const filtered = useMemo(() => devices.filter((item) => !query.trim() || `${item.reference} ${item.model} ${item.brand} ${item.location} ${item.Customer.name}`.toLocaleLowerCase("pt-BR").includes(query.trim().toLocaleLowerCase("pt-BR"))), [devices, query]);
 
   return (
@@ -78,7 +88,10 @@ export const Devices = () => {
         <Loading />
       ) : error ? <ErrorState description={error} /> : (
         <DevicesList
+          ref={listRef}
           data={filtered}
+          refreshing={refreshing}
+          onRefresh={refreshDevices}
           renderItem={({ item }: { item: DeviceProps }) => (
             <DeviceItem
               id={item.id}

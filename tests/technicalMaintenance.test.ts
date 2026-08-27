@@ -39,3 +39,8 @@ test("relatórios individual, consolidado e orçamento compartilham o layout de 
   for (const html of documents) for (const marker of ["reference-header", "reference-band", "reference-footer", "Fixar Soluções LTDA"]) assert.ok(html.includes(marker), marker);
   assert.match(documents[1], /RELATÓRIO CONSOLIDADO DE/); assert.match(documents[2], /PROPOSTA DE SERVIÇOS/);
 });
+test("orçamento apresenta quantidades, observações e ajustes financeiros", () => {
+  const items = [{ id: "service-1", name: "Higienização", description: "Limpeza completa", price: 180, qtd: 2, total: 360 }];
+  const html = generateBudgetsHtml(items, [], 350, fixtureCompany, simpleMaintenance.Customer, "Validade de 15 dias.", { surcharge: 10, discount: 20 });
+  for (const expected of ["Higienização", ">2<", "Validade de 15 dias.", "Acréscimos", "R$ 10,00", "Descontos", "R$ 20,00", "R$ 350,00"]) assert.ok(html.includes(expected), expected);
+});

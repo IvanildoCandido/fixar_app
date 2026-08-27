@@ -28,6 +28,7 @@
     "plugins": [
       "./plugins/withFmtXcode26Fix",
       "expo-font",
+      "expo-screen-orientation",
       [
         "expo-camera",
         {

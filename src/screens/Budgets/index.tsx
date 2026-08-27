@@ -105,18 +105,20 @@ export const Budgets = () => {
       );
     } else {
       try {
+        const discountValue = maskedMoneyValue(discountRaw, discount);
+        const surchargeValue = maskedMoneyValue(incrementRaw, increment);
         await API.post("/quotes/add", {
           customerId: selectedCustomer.id,
           services: servicesSelected,
           parts: partsSelected,
           comments,
-          discount: Number(discountRaw?.current?.getRawValue() ?? 0),
-          surcharge: Number(incrementRaw?.current?.getRawValue() ?? 0),
+          discount: discountValue,
+          surcharge: surchargeValue,
           total,
         });
         if (!session) throw new Error("Empresa ativa não encontrada.");
         const company = await loadReportCompany(session.organization);
-        const html = generateBudgetsHtml(servicesSelected, partsSelected, total, company, selectedCustomer, comments);
+        const html = generateBudgetsHtml(servicesSelected, partsSelected, total, company, selectedCustomer, comments, { discount: discountValue, surcharge: surchargeValue });
         await printToFile(html);
       } catch (error) {
         Alert.alert("Mensagem do Sistema:", error instanceof Error ? error.message : "Não foi possível salvar o orçamento.");
@@ -149,6 +151,9 @@ export const Budgets = () => {
           itensSelected={partsSelected}
           setItensSelected={setPartsSelected}
         />
+
+        <InfoText>Observações do orçamento</InfoText>
+        <TextArea multiline numberOfLines={4} value={comments} onChangeText={setComments} placeholder="Condições, prazo de validade, forma de pagamento ou informações para o cliente" />
 
         <EntriesArea>
           <Side>

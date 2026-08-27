@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Alert, Modal } from "react-native";
 
 import {
@@ -13,14 +13,14 @@ import {
 
 import { HeaderFilter } from "../../components/HeaderFilter";
 import { RepairItem } from "../../components/RepairItem";
-import { Period, Repair } from "../../types/data";
+import { Period, Repair, RepairFilters } from "../../types/data";
 import {
   defaultCustomer,
   defaultDevice,
   defaultPeriod,
 } from "../../utils/dafaultValues";
 import { SetFilter } from "../../components/SetFilter";
-import API from "../../services/API";
+import { listRepairDetailsForReport, listRepairSummaries } from "../../services/API";
 import { Loading } from "../../components/Loading";
 import { Button, EmptyState } from "../../design-system";
 
@@ -47,7 +47,8 @@ export const FinishedServices = () => {
   const [devicesModal, setDevicesModal] = useState(false);
   const [repairs, setRepairs] = useState<Repair[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtered, setFiltered] = useState<Repair[]>([] as Repair[]);
+  const [filters, setFilters] = useState<RepairFilters>({});
+  const [page, setPage] = useState(0); const [hasMore, setHasMore] = useState(false); const [total, setTotal] = useState(0); const [loadingMore, setLoadingMore] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>(defaultPeriod);
   const [filterApplied, setFilterApplied] = useState(false);
   const [generatingReport, setGeneratingReport] = useState(false);
@@ -55,24 +56,17 @@ export const FinishedServices = () => {
   const handleModalOpen = () => {
     setDevicesModal(true);
   };
-  useEffect(() => {
-    setLoading(true);
-    loadRepairs().then(() => setLoading(false));
-  }, [reload]);
-
-  const loadRepairs = async () => {
+  const loadRepairs = useCallback(async (nextPage = 0, replace = true) => {
+    replace ? setLoading(true) : setLoadingMore(true);
     try {
-      const { data } = await API.get("/repairs/list");
-      setRepairs(data);
-      setLoading(false);
+      const result = await listRepairSummaries(nextPage, 20, filters);
+      setRepairs((current) => replace ? result.items : [...current, ...result.items]); setPage(nextPage); setHasMore(result.hasMore); setTotal(result.total);
     } catch (error) {
       console.log(error);
       alert("Não foi possível carregar a lista de manutenções.");
-    }
-  };
-  useEffect(() => {
-    if (filterApplied) setRepairs(filtered);
-  }, [filterApplied, filtered]);
+    } finally { setLoading(false); setLoadingMore(false); }
+  }, [filters]);
+  useEffect(() => { loadRepairs(0, true); }, [loadRepairs, reload]);
 
   const printToFile = async (html: string) => {
     const { uri } = await Print.printToFileAsync({
@@ -82,13 +76,14 @@ export const FinishedServices = () => {
   };
 
   const handlerReport = async () => {
-    if (!filtered.length || generatingReport) return;
+    if (!repairs.length || generatingReport) return;
 
     try {
       setGeneratingReport(true);
       if (!session) throw new Error("Empresa ativa não encontrada.");
       const company = await loadReportCompany(session.organization);
-      const html = generateMultipleHtml(filtered, selectedPeriod, company);
+      const reportRepairs = await listRepairDetailsForReport(filters);
+      const html = generateMultipleHtml(reportRepairs, selectedPeriod, company);
       await printToFile(html);
     } catch (error) {
       console.error("Não foi possível gerar o relatório", error);
@@ -115,13 +110,13 @@ export const FinishedServices = () => {
               <ReportActionContent>
                 <ReportActionTitle>Relatório filtrado</ReportActionTitle>
                 <ReportActionText>
-                  {filtered.length} {filtered.length === 1 ? "serviço encontrado" : "serviços encontrados"}
+                  {total} {total === 1 ? "serviço encontrado" : "serviços encontrados"}
                 </ReportActionText>
               </ReportActionContent>
               <Button
                 label={generatingReport ? "Gerando PDF…" : "Gerar PDF"}
                 loading={generatingReport}
-                disabled={filtered.length === 0}
+                disabled={repairs.length === 0}
                 onPress={handlerReport}
               />
             </ReportAction>
@@ -131,6 +126,12 @@ export const FinishedServices = () => {
           ) : (
             <DevicesList
               data={repairs}
+              onEndReached={() => { if (hasMore && !loadingMore) loadRepairs(page + 1, false); }}
+              onEndReachedThreshold={0.35}
+              initialNumToRender={12}
+              maxToRenderPerBatch={16}
+              windowSize={7}
+              removeClippedSubviews
               renderItem={({ item }: { item: Repair }) => (
                 <RepairItem
                   repair={item}
@@ -146,6 +147,7 @@ export const FinishedServices = () => {
                   key={item.id}
                   services={item.services}
                   setDevicesModal={setDevicesModal}
+                  onDeleted={(deletedId) => { setRepairs((current) => current.filter((item) => item.id !== deletedId)); setTotal((current) => Math.max(0, current - 1)); }}
                 />
               )}
               keyExtractor={(item: Repair) => item.id}
@@ -156,10 +158,9 @@ export const FinishedServices = () => {
       <Modal visible={devicesModal} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setDevicesModal(false)}>
         <SetFilter
           closeModal={setDevicesModal}
-          setFiltered={setFiltered}
           selectedPeriod={selectedPeriod}
           setSelectedPeriod={setSelectedPeriod}
-          onFiltersApplied={() => setFilterApplied(true)}
+          onFiltersApplied={(nextFilters) => { setFilters(nextFilters); setFilterApplied(true); }}
         />
       </Modal>
     </Container>

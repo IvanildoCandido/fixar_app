@@ -72,6 +72,8 @@ export interface MaintenanceReminder {
   Customer: Customer;
   Device: Device;
 }
+export interface Page<T> { items: T[]; total: number; page: number; pageSize: number; hasMore: boolean; }
+export interface RepairFilters { customerId?: string; deviceId?: string; startAt?: string; endAt?: string; }
 export interface Period {
   start: number;
   startFormatted: string;
