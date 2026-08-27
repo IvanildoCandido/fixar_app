@@ -14,7 +14,6 @@ import {
   Container,
   Field,
   FieldLabel,
-  Footer,
   Input,
   Title,
 } from "./styles";
@@ -121,8 +120,6 @@ export function Login() {
             </Button>
           )}
         </Card>
-
-        <Footer>Autenticação protegida pelo Supabase.</Footer>
       </Container>
     </KeyboardAvoidingView>
   );

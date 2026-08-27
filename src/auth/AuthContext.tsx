@@ -58,43 +58,46 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
   const [loading, setLoading] = useState(true);
 
   async function loadApplicationSession(user: User | null) {
-    setAuthenticatedUser(user);
-    if (!user) {
-      setActiveOrganizationId(null);
-      setSession(null);
+    setLoading(true);
+    try {
+      setAuthenticatedUser(user);
+      if (!user) {
+        setActiveOrganizationId(null);
+        setSession(null);
+        setNeedsOrganization(false);
+        return;
+      }
+      const { data, error } = await supabase.from("organization_members")
+        .select("organization_id, role, Organization:organizations(id, name, legal_name, document, email, phone, address, logo_path)")
+        .eq("user_id", user.id).eq("status", "active").limit(1).maybeSingle();
+      if (error) throw new Error(errorMessage(error, "Não foi possível carregar sua empresa."));
+      if (!data) {
+        setActiveOrganizationId(null);
+        setSession(null);
+        setNeedsOrganization(true);
+        return;
+      }
+      const organization = data.Organization as unknown as FixarOrganization;
+      const nextSession: FixarSession = {
+        user: {
+          id: user.id,
+          name: String(user.user_metadata?.display_name || user.email?.split("@")[0] || "Usuário"),
+          email: user.email ?? "",
+        },
+        organization,
+        role: data.role as FixarRole,
+      };
+      setActiveOrganizationId(organization.id);
+      setSession(nextSession);
       setNeedsOrganization(false);
-      return;
+    } finally {
+      setLoading(false);
     }
-    const { data, error } = await supabase.from("organization_members")
-      .select("organization_id, role, Organization:organizations(id, name, legal_name, document, email, phone, address, logo_path)")
-      .eq("user_id", user.id).eq("status", "active").limit(1).maybeSingle();
-    if (error) throw new Error(errorMessage(error, "Não foi possível carregar sua empresa."));
-    if (!data) {
-      setActiveOrganizationId(null);
-      setSession(null);
-      setNeedsOrganization(true);
-      return;
-    }
-    const organization = data.Organization as unknown as FixarOrganization;
-    const nextSession: FixarSession = {
-      user: {
-        id: user.id,
-        name: String(user.user_metadata?.display_name || user.email?.split("@")[0] || "Usuário"),
-        email: user.email ?? "",
-      },
-      organization,
-      role: data.role as FixarRole,
-    };
-    setActiveOrganizationId(organization.id);
-    setSession(nextSession);
-    setNeedsOrganization(false);
   }
 
   useEffect(() => {
-    let mounted = true;
     supabase.auth.getSession().then(async ({ data }) => {
-      try { await loadApplicationSession(data.session?.user ?? null); }
-      finally { if (mounted) setLoading(false); }
+      await loadApplicationSession(data.session?.user ?? null);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, authSession) => {
       setTimeout(() => {
@@ -104,10 +107,7 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
         });
       }, 0);
     });
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
