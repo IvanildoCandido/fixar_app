@@ -54,6 +54,8 @@ Este documento descreve o worktree observado, não produção.
 - Migration `20260827203704_platform_admin_qr_codes` aplicada no Supabase: criou `platform_admins` e `generated_qr_codes`, ambas com RLS, e a RPC protegida `platform_admin_metrics`; somente a conta global do proprietário foi cadastrada como administradora.
 - `apps/admin-web` agora autentica via Supabase Auth, valida `platform_admins`, persiste e recarrega QR Codes do banco e consulta métricas reais de Auth, organizações, clientes, ativos, ordens e Storage.
 - Correção do painel web: o Vite foi configurado com `envDir: "../.."` para carregar as variáveis públicas do `.env` na raiz do monorepo; o dashboard voltou a iniciar sem o erro de configuração do Supabase.
+- O contrato de QR Code foi corrigido para preservar referências legadas com hífen, como `SC-0400`; o scanner agora extrai o payload `FIXAR|EQUIPMENT|...` e mantém compatibilidade com códigos antigos de 7 caracteres.
+- Revisão corretiva do painel web concluída: o manifesto raiz voltou a ter uma única lista de dependências, falhas de carregamento agora têm feedback visual, e a identidade exibida é derivada da sessão autenticada.
 
 ## Limitações da descoberta
 

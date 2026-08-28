@@ -20,4 +20,5 @@ O acesso usa Supabase Auth e é liberado apenas para usuários cadastrados em `p
 - Usuários, organizações, clientes, equipamentos, ordens e armazenamento são consultados por uma RPC protegida.
 - Banda e limites de consumo exigem uma fonte administrativa específica da plataforma e permanecem como próxima etapa.
 - Nenhuma chave administrativa do Supabase deve ser colocada neste app web.
+- O bootstrap do administrador global é feito no provisionamento do ambiente e não fica embutido na migration.
 - A autenticação do proprietário e as métricas reais são etapas seguintes.

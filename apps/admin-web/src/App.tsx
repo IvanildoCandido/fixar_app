@@ -47,6 +47,7 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
+  const [dashboardError, setDashboardError] = useState("");
   const [referenceInput, setReferenceInput] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [codes, setCodes] = useState<GeneratedCode[]>([]);
@@ -84,16 +85,23 @@ function App() {
 
   async function loadDashboardData() {
     setLoadingMetrics(true);
-    const [{ data: metricData }, { data: qrData }] = await Promise.all([
-      supabase.rpc("platform_admin_metrics"),
-      supabase.from("generated_qr_codes").select("reference, payload").order("created_at", { ascending: false }).limit(48),
-    ]);
-    if (metricData) setMetrics(metricData as Metrics);
-    if (qrData) {
-      const restored = await Promise.all(qrData.map(async (row) => ({ reference: row.reference, dataUrl: await QRCode.toDataURL(row.payload, { width: 480, margin: 2, color: { dark: "#10261d", light: "#ffffff" } }) })));
-      setCodes(restored);
+    setDashboardError("");
+    try {
+      const [{ data: metricData, error: metricError }, { data: qrData, error: qrError }] = await Promise.all([
+        supabase.rpc("platform_admin_metrics"),
+        supabase.from("generated_qr_codes").select("reference, payload").order("created_at", { ascending: false }).limit(48),
+      ]);
+      if (metricError || qrError) throw new Error("Falha ao carregar dados do painel.");
+      if (metricData) setMetrics(metricData as Metrics);
+      if (qrData) {
+        const restored = await Promise.all(qrData.map(async (row) => ({ reference: row.reference, dataUrl: await QRCode.toDataURL(row.payload, { width: 480, margin: 2, color: { dark: "#10261d", light: "#ffffff" } }) })));
+        setCodes(restored);
+      }
+    } catch {
+      setDashboardError("Não foi possível atualizar os dados. Tente novamente.");
+    } finally {
+      setLoadingMetrics(false);
     }
-    setLoadingMetrics(false);
   }
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
@@ -146,6 +154,8 @@ function App() {
   }
 
   const visibleCodes = showAll ? codes : codes.slice(0, 6);
+  const ownerName = String(session?.user.user_metadata?.display_name || session?.user.email?.split("@")[0] || "Proprietário");
+  const ownerInitials = ownerName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
   if (authLoading) return <div className="auth-screen"><div className="auth-box"><div className="brand-mark"><WrenchMark /></div><span className="eyebrow">FIXAR ADMIN</span><h1>Carregando painel</h1><p>Validando seu acesso seguro.</p></div></div>;
   if (!session || !authorized) return <LoginScreen error={authError} onSubmit={handleLogin} />;
@@ -175,8 +185,8 @@ function App() {
         <button className="nav-item" type="button"><Settings size={18} /><span>Configurações</span></button>
         <button className="nav-item" type="button"><CircleHelp size={18} /><span>Ajuda</span></button>
         <div className="profile-row">
-          <div className="avatar">IC</div>
-          <div><strong>Ivanildo Candido</strong><span>Proprietário</span></div>
+          <div className="avatar">{ownerInitials}</div>
+          <div><strong>{ownerName}</strong><span>Proprietário</span></div>
           <LogOut size={17} className="profile-action" />
         </div>
       </aside>
@@ -189,7 +199,7 @@ function App() {
 
         <div className="content-wrap">
           <section className="welcome-row">
-            <div><h2>Bom dia, Ivanildo.</h2><p>Acompanhe a operação do Fixar e cuide dos detalhes que mantêm tudo em movimento.</p></div>
+            <div><h2>Bom dia, {ownerName.split(/\s+/)[0]}.</h2><p>Acompanhe a operação do Fixar e cuide dos detalhes que mantêm tudo em movimento.</p></div>
             <div className="date-chip">27 AGO 2026 <span>•</span> QUINTA-FEIRA</div>
           </section>
 
@@ -199,6 +209,7 @@ function App() {
             <MetricCard label="Armazenamento" value={metrics ? formatBytes(metrics.storage_bytes) : "…"} detail={metrics ? `${metrics.storage_files} arquivos` : "Consultando banco"} icon={Database} tone="amber" />
             <MetricCard label="Ordens de serviço" value={metrics ? String(metrics.work_orders) : "…"} detail={metrics ? `${metrics.assets} equipamentos ativos` : "Consultando banco"} icon={Activity} tone="red" />
           </section>
+          {dashboardError && <div className="dashboard-error" role="alert"><X size={16} />{dashboardError}</div>}
 
           <section className="primary-grid">
             <div className="panel qr-panel">
@@ -212,7 +223,7 @@ function App() {
               </div>
               <div className="panel-note"><ShieldCheck size={16} /><span>O código é criado no navegador e não envia informações para serviços externos.</span></div>
             </div>
-            <div className="panel insight-panel"><div className="section-kicker"><Gauge size={15} /> PRÓXIMOS INDICADORES</div><h3>Seu painel está pronto para crescer.</h3><p>As métricas de usuários, banco e consumo serão conectadas ao backend administrativo em uma próxima etapa.</p><div className="insight-list"><div><BarChart3 size={17} /><span>Uso por organização</span><em>planejado</em></div><div><Database size={17} /><span>Saúde do banco</span><em>planejado</em></div><div><FileText size={17} /><span>Auditoria de ações</span><em>planejado</em></div></div></div>
+            <div className="panel insight-panel"><div className="section-kicker"><Gauge size={15} /> PRÓXIMOS INDICADORES</div><h3>Seu painel está pronto para crescer.</h3><p>Os dados operacionais já estão conectados. Novos indicadores administrativos entram conforme as fontes forem integradas.</p><div className="insight-list"><div><BarChart3 size={17} /><span>Uso por organização</span><em>planejado</em></div><div><Database size={17} /><span>Saúde do banco</span><em>planejado</em></div><div><FileText size={17} /><span>Auditoria de ações</span><em>planejado</em></div></div></div>
           </section>
 
           {codes.length > 0 && <section className="panel codes-panel" id="qr-results"><div className="panel-heading results-heading"><div><span className="section-kicker"><Check size={15} /> PRONTOS PARA USO</span><h3>QR Codes gerados</h3><p>{codes.length} etiqueta{codes.length > 1 ? "s" : ""} criada{codes.length > 1 ? "s" : ""} nesta sessão.</p></div><div className="results-actions"><button className="secondary-button" onClick={printCodes} type="button"><Printer size={17} /> Imprimir</button><button className="icon-button" onClick={() => setCodes([])} aria-label="Fechar resultados" type="button"><X size={18} /></button></div></div><div className="code-grid">{visibleCodes.map((code) => <article className="code-card" key={code.reference}><div className="code-image-wrap"><img src={code.dataUrl} alt={`QR Code da referência ${code.reference}`} /></div><div className="code-card-footer"><div><span>REFERÊNCIA</span><strong>{code.reference}</strong></div><button className="download-button" onClick={() => downloadCode(code)} aria-label={`Baixar QR Code ${code.reference}`} type="button"><Download size={17} /></button></div></article>)}</div>{codes.length > 6 && <button className="show-more" onClick={() => setShowAll((current) => !current)} type="button">{showAll ? "Mostrar menos" : `Ver os ${codes.length} códigos`} <ArrowUpRight size={16} /></button>}</section>}
