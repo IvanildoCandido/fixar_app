@@ -41,13 +41,13 @@ export function FormField({ label, error, required, ...props }: TextInputProps &
 }
 const FormGroup = styled.View`margin-bottom: ${({ theme }) => theme.spacing.lg}px;`;
 
-export type SyncState = "synced" | "pending" | "syncing" | "offline" | "conflict" | "error";
-const syncLabels: Record<SyncState, string> = { synced: "Sincronizado", pending: "Aguardando sincronização", syncing: "Sincronizando", offline: "Offline", conflict: "Conflito", error: "Falha na sincronização" };
+export type SyncState = "draft" | "synced" | "pending" | "syncing" | "offline" | "conflict" | "error";
+const syncLabels: Record<SyncState, string> = { draft: "Rascunho", synced: "Sincronizado", pending: "Aguardando sincronização", syncing: "Sincronizando", offline: "Offline", conflict: "Conflito", error: "Falha na sincronização" };
 const BadgeRoot = styled.View<{ color: string }>`align-self: flex-start; flex-direction: row; align-items: center; gap: 6px; padding: 5px 9px; border-radius: ${({ theme }) => theme.radii.pill}px; border: 1px solid ${({ color }) => color};`;
 const BadgeText = styled.Text<{ color: string }>`font-family: ${({ theme }) => theme.fonts.medium}; font-size: ${({ theme }) => theme.typography.caption.size}px; color: ${({ color }) => color};`;
 export function SyncBadge({ state }: { state: SyncState }) {
   const theme = useTheme();
-  const colors: Record<SyncState, string> = { synced: theme.colors.syncSynced, pending: theme.colors.syncPending, syncing: theme.colors.syncSyncing, offline: theme.colors.syncOffline, conflict: theme.colors.syncConflict, error: theme.colors.syncError };
+  const colors: Record<SyncState, string> = { draft: theme.colors.syncOffline, synced: theme.colors.syncSynced, pending: theme.colors.syncPending, syncing: theme.colors.syncSyncing, offline: theme.colors.syncOffline, conflict: theme.colors.syncConflict, error: theme.colors.syncError };
   const Icon = state === "synced" ? Check : state === "offline" ? CloudOff : state === "conflict" ? TriangleAlert : state === "error" ? AlertCircle : state === "syncing" ? LoaderCircle : RefreshCw;
   return <BadgeRoot color={colors[state]} accessibilityRole="text" accessibilityLabel={syncLabels[state]}><Icon size={14} color={colors[state]} /><BadgeText color={colors[state]}>{syncLabels[state]}</BadgeText></BadgeRoot>;
 }

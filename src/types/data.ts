@@ -54,6 +54,8 @@ export interface Repair {
   technicianSignatureSvg?: string;
   customerSignatureSvg?: string;
   signedAt?: string;
+  offlineStatus?: "draft" | "pending" | "syncing" | "error";
+  offlineLocalId?: string;
 }
 
 export type TechnicalCheckStatus = "ok" | "attention" | "non_conforming" | "not_checked" | "not_applicable";

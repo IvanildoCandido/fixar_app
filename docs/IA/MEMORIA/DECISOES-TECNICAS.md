@@ -11,3 +11,17 @@ Registre somente decisões aceitas. Propostas permanecem explicitamente identifi
 - A sessão local atual é apenas um adaptador demonstrativo e deverá ser substituída pelo provedor de identidade sem alterar a navegação principal.
 
 Detalhamento e modelo inicial: `docs/ARQUITETURA-SAAS.md`.
+
+## 2026-08-28 — Offline restrito a manutenções individuais
+
+- O primeiro suporte offline não replica o Supabase: persiste somente rascunhos e manutenções individuais ainda não confirmadas pelo servidor.
+- `AsyncStorage`, já presente no aplicativo, guarda um payload estruturado completo com snapshots mínimos de cliente/equipamento e assinaturas SVG; registros são segmentados por `user_id` e `organization_id`.
+- Cada manutenção recebe `local_id` UUID. A RPC `create_work_order_offline` usa esse identificador com unicidade por organização e grava OS, itens, checks e medições em uma única transação.
+- Após confirmação do servidor o registro local é removido. Falha ou resposta perdida preserva o payload para repetição idempotente.
+- Clientes, equipamentos, catálogo, anexos, ordens em lote e sincronização multi-device permanecem fora do escopo offline.
+
+## 2026-08-28 — QR público pertencente à organização
+
+- O QR público usa uma tabela de vínculo separada, token UUID aleatório estável e consulta desativada por padrão; o UUID interno do equipamento não aparece na URL.
+- A leitura anônima ocorre somente pela RPC minimizada `get_public_equipment`; tabelas de equipamento, ordens e vínculos não recebem leitura anônima ampla.
+- O QR público por URL permanece separado do QR interno de referência. Uma futura transferência autorizada poderá reposicionar o vínculo preservando o token, sem deduplicação ou transferência nesta V1.

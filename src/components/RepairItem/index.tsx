@@ -17,7 +17,7 @@ import {
   Title,
   DateService,
 } from "./styles";
-import { FileText, Trash2 } from "lucide-react-native";
+import { FileText, Pencil, RefreshCw, Trash2 } from "lucide-react-native";
 import { useTheme } from "styled-components/native";
 import { Customer, Device, Part, Service } from "../../types/data";
 import { Alert } from "react-native";
@@ -26,6 +26,7 @@ import { getRepairDetail } from "../../services/API";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../../auth/AuthContext";
 import { loadReportCompany } from "../../services/reportCompany";
+import { SyncBadge } from "../../design-system";
 
 interface Props {
   repair: import("../../types/data").Repair;
@@ -41,6 +42,7 @@ interface Props {
   total: string;
   setDevicesModal: React.Dispatch<SetStateAction<boolean>>;
   onDeleted?: (id: string) => void;
+  onSync?: () => void;
 }
 
 export const RepairItem = ({
@@ -57,6 +59,7 @@ export const RepairItem = ({
   total,
   setDevicesModal,
   onDeleted,
+  onSync,
 }: Props) => {
   const theme = useTheme();
   const navigation = useNavigation<any>();
@@ -69,9 +72,12 @@ export const RepairItem = ({
   };
 
   const handlerDelete = () => {
+    const local = Boolean(repair.offlineLocalId);
     Alert.alert(
       "Excluir Manutenção:",
-      "Você deseja excluir essa manutenção? Após excluída não será possível gerar um relatório da mesma!",
+      local
+        ? "Esta manutenção ainda não foi enviada para a nuvem. Deseja excluí-la permanentemente deste dispositivo?"
+        : "Você deseja excluir essa manutenção? Após excluída não será possível gerar um relatório da mesma!",
       [
         {
           text: "Não",
@@ -82,7 +88,7 @@ export const RepairItem = ({
           text: "Sim",
           onPress: async () => {
             try {
-              await API.delete(`/repairs/${id}`);
+              if (!local) await API.delete(`/repairs/${id}`);
               onDeleted?.(id);
             } catch (error) {
               console.log(error);
@@ -102,7 +108,7 @@ export const RepairItem = ({
     try {
       if (!session) throw new Error("Empresa ativa não encontrada.");
       const company = await loadReportCompany(session.organization);
-      const detail = await getRepairDetail(id);
+      const detail = repair.offlineLocalId ? repair : await getRepairDetail(id);
       const html = generateMaintenanceHtml({ ...detail, technicianName: detail.technicianName || session.user.name }, company);
       await printToFile(html);
     } catch (error) {
@@ -113,6 +119,7 @@ export const RepairItem = ({
   return (
     <Container>
       <InfoArea>
+        <SyncBadge state={repair.offlineStatus ?? "synced"} />
         <Label>
           <Title>Referência:</Title>
           <ReferenceName>{device.reference}</ReferenceName>
@@ -131,6 +138,14 @@ export const RepairItem = ({
         </Label>
       </InfoArea>
       <IconsArea>
+        {repair.offlineLocalId ? <>
+          <TouchAction accessibilityLabel="Editar manutenção local" onPress={() => navigation.navigate("Repair", { localId: repair.offlineLocalId })}>
+            <Pencil size={18} color={theme.colors.primary} />
+          </TouchAction>
+          {repair.offlineStatus !== "draft" ? <TouchAction accessibilityLabel="Sincronizar manutenção agora" onPress={onSync}>
+            <RefreshCw size={18} color={theme.colors.syncPending} />
+          </TouchAction> : null}
+        </> : null}
         <TouchAction accessibilityLabel="Excluir ordem" onPress={handlerDelete}>
           <Trash2 size={18} color={theme.colors.danger} />
         </TouchAction>

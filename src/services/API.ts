@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { Page, Repair, RepairFilters } from "../types/data";
 import { cachedQuery, clearQueryCache, invalidateQueries } from "./queryCache";
+import type { OfflineMaintenancePayload } from "./offlineMaintenance";
 
 let activeOrganizationId: string | null = null;
 
@@ -191,6 +192,19 @@ export async function getRepairDetail(id: string): Promise<Repair> {
     return mapRepair(unwrap<any>(result as any));
   });
 }
+
+export type EquipmentPublicLink = { publicToken: string; enabled: boolean };
+export async function manageEquipmentPublicLink(assetId: string, enabled?: boolean, rotateToken = false): Promise<EquipmentPublicLink> {
+  const { data, error } = await supabase.rpc("manage_equipment_public_link", {
+    target_asset_id: assetId,
+    next_enabled: enabled ?? null,
+    rotate_token: rotateToken,
+  });
+  if (error) throw error;
+  const link = data?.[0];
+  if (!link) throw new Error("Não foi possível gerar o QR Code público.");
+  return { publicToken: link.public_token, enabled: link.enabled };
+}
 export async function listRepairDetailsForReport(filters: RepairFilters = {}): Promise<Repair[]> {
   const organizationId = requireOrganization();
   let query = supabase.from("work_orders")
@@ -315,6 +329,17 @@ async function createRepair(payload: any) {
   }
   invalidateQueries(`repair-summaries:${organizationId}`); invalidateQueries(`reminders:${organizationId}`);
   return order;
+}
+
+export async function createRepairIdempotent(localId: string, payload: OfflineMaintenancePayload) {
+  const organizationId = requireOrganization();
+  const result = await supabase.rpc("create_work_order_offline", {
+    payload: { ...payload, localId, organizationId },
+  });
+  if (result.error) throw result.error;
+  invalidateQueries(`repair-summaries:${organizationId}`);
+  invalidateQueries(`reminders:${organizationId}`);
+  return { id: result.data as string };
 }
 
 export async function createRepairsBatch(payload: any): Promise<Array<{ id: string; asset_id: string }>> {

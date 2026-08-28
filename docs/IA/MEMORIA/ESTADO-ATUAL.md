@@ -1,8 +1,8 @@
 # Estado atual
 
-**Snapshot observado:** `2026-08-27`
+**Snapshot observado:** `2026-08-28`
 **Branch observada:** `main`  
-**Commit-base observado:** repositório novo, ainda sem commits
+**Commit-base observado:** `189b5b8`
 
 Este documento descreve o worktree observado, não produção.
 
@@ -56,13 +56,17 @@ Este documento descreve o worktree observado, não produção.
 - Correção do painel web: o Vite foi configurado com `envDir: "../.."` para carregar as variáveis públicas do `.env` na raiz do monorepo; o dashboard voltou a iniciar sem o erro de configuração do Supabase.
 - O contrato de QR Code foi corrigido para preservar referências legadas com hífen, como `SC-0400`; o scanner agora extrai o payload `FIXAR|EQUIPMENT|...` e mantém compatibilidade com códigos antigos de 7 caracteres.
 - Revisão corretiva do painel web concluída: o manifesto raiz voltou a ter uma única lista de dependências, falhas de carregamento agora têm feedback visual, e a identidade exibida é derivada da sessão autenticada.
+- Offline simples de manutenções implementado no worktree: rascunhos e conclusões pendentes são persistidos no dispositivo por usuário/organização, restaurados no formulário, exibidos no histórico/Home e reenviados manualmente ou ao abrir/retomar o app. A migration `20260828120000_offline_maintenance_idempotency.sql` foi aplicada e validada no Supabase de desenvolvimento com idempotência, atomicidade, filhos completos e negação sem associação.
+- QR público de equipamentos implementado e aplicado ao Supabase de desenvolvimento: técnicos podem criar, ativar, compartilhar, imprimir e rotacionar uma URL pública; `apps/admin-web` serve uma ficha mobile-first sem login com dados minimizados, histórico da mesma organização e contato opcional. Teste remoto com rollback confirmou revogação, rotação, remoção lógica e negação entre organizações.
+- Domínio público dos QRs configurado como `https://fixar.systechsolucoes.com.br` por meio de `EXPO_PUBLIC_FIXAR_WEB_URL`.
+- Publicação Vercel preparada na raiz do monorepo: `vercel.json` compila `apps/admin-web`, publica o dashboard em `/`, preserva a ficha pública em `/e/:token` por rewrite SPA e adiciona headers básicos; checklist em `docs/DEPLOY-VERCEL.md`.
 
 ## Limitações da descoberta
 
 - O estado remoto foi verificado após as migrations, mas depende do serviço externo; os contratos versionados estão em `supabase/migrations/`.
 - Há testes automatizados locais para cálculos e composição dinâmica do relatório técnico; CI ainda não foi configurada.
 - O gerenciador de pacotes canônico é npm; `package-lock.json` é o único lockfile mantido.
-- Não existe implementação de Sync v1 no worktree observado: SQLite, Outbox, `mutation_id`, `record_version`, push/pull e recuperação `IN_FLIGHT` não estão presentes. Os estados de sync existentes são somente componentes visuais.
+- Não existe sincronização global no worktree: o suporte offline é deliberadamente restrito a rascunhos e manutenções individuais pendentes, sem SQLite, Outbox genérica, `record_version`, push/pull, replicação de tabelas ou sincronização multi-device.
 - Convites, troca entre múltiplas organizações, upload de anexos e matriz detalhada de permissões ainda precisam ser implementados no aplicativo.
 - A migração visual é incremental: telas operacionais ainda usam componentes legados; estados de sync são apenas componentes visuais até existir uma fonte real de sincronização/offline.
 - Configuração de publicação e credenciais EAS permanecem pendentes.

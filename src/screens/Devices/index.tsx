@@ -13,6 +13,7 @@ import { Loading } from "../../components/Loading";
 import { useFocusEffect } from "@react-navigation/native";
 import { EmptyState, ErrorState, SearchInput } from "../../design-system";
 import { invalidateQueries } from "../../services/queryCache";
+import { PublicEquipmentQr } from "../../components/PublicEquipmentQr";
 
 export interface DeviceProps {
   Customer: Customer;
@@ -41,6 +42,7 @@ export const defaultData: DeviceProps = {
 export const Devices = () => {
   const listRef = useRef<any>(null);
   const [devicesModal, setDevicesModal] = useState(false);
+  const [publicQrDevice, setPublicQrDevice] = useState<DeviceProps | null>(null);
   const [devices, setDevices] = useState<DeviceProps[]>([]);
   const [dataEdit, setDataEdit] = useState(defaultData);
   const [loading, setLoading] = useState(true);
@@ -102,6 +104,7 @@ export const Devices = () => {
               setDevicesModal={setDevicesModal}
               setDataEdit={setDataEdit}
               setLoading={setLoading}
+              onPublicQr={() => setPublicQrDevice(item)}
             />
           )}
           keyExtractor={(item: DeviceProps) => item.id}
@@ -110,6 +113,9 @@ export const Devices = () => {
       )}
       <Modal visible={devicesModal} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setDevicesModal(false)}>
         <AddDevice closeModal={setDevicesModal} dataEdit={dataEdit} />
+      </Modal>
+      <Modal visible={Boolean(publicQrDevice)} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setPublicQrDevice(null)}>
+        {publicQrDevice ? <PublicEquipmentQr device={publicQrDevice} onClose={() => setPublicQrDevice(null)} /> : null}
       </Modal>
     </Container>
   );

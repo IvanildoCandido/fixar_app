@@ -1,11 +1,9 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SetStateAction, useState } from "react";
+import { SetStateAction } from "react";
 import { Alert } from "react-native";
-import { setLocale } from "yup";
 import { DeviceProps } from "../../screens/Devices";
 import API from "../../services/API";
 import { Customer, Device } from "../../types/data";
-import { Pencil, Trash2 } from "lucide-react-native";
+import { Pencil, QrCode, Trash2 } from "lucide-react-native";
 import { useTheme } from "styled-components/native";
 
 import {
@@ -29,8 +27,8 @@ interface Props {
   setDevicesModal: React.Dispatch<SetStateAction<boolean>>;
   setDataEdit: React.Dispatch<SetStateAction<Device>>;
   setLoading: React.Dispatch<SetStateAction<boolean>>;
+  onPublicQr: () => void;
 }
-const datakey = "@fixar:devices";
 
 export const DeviceItem = ({
   id,
@@ -41,6 +39,7 @@ export const DeviceItem = ({
   setDevicesModal,
   setDataEdit,
   setLoading,
+  onPublicQr,
 }: Props) => {
   const theme = useTheme();
   const getData = async () => {
@@ -103,6 +102,9 @@ export const DeviceItem = ({
         </Label>
       </InfoArea>
       <IconsArea>
+        <TouchAction accessibilityLabel="QR Code público" onPress={onPublicQr}>
+          <QrCode size={18} color={theme.colors.primary} />
+        </TouchAction>
         <TouchAction accessibilityLabel="Editar equipamento" onPress={() => handlerEdit(id)}>
           <Pencil size={18} color={theme.colors.muted} />
         </TouchAction>

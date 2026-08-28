@@ -23,9 +23,9 @@ import {
   ScanTitle,
   ScanDescription,
 } from "./styles";
-import { Alert, Modal, ScrollView } from "react-native";
+import { Alert, AppState, Modal, ScrollView } from "react-native";
 import { defaultCustomer, defaultDevice } from "../../utils/dafaultValues";
-import API from "../../services/API";
+import API, { createRepairIdempotent } from "../../services/API";
 import { ScannerQR } from "../../components/ScannerQR";
 import { ButtonScan } from "../../components/AddDevice/styles";
 import { QrCode } from "lucide-react-native";
@@ -39,6 +39,16 @@ import { checksForServiceNames, makeDefaultChecks, maskedMoneyValue, withCalcula
 import { SignaturePad } from "../../components/SignaturePad";
 import { SelectCustomers } from "../../components/Form/SelectCustomers";
 import { SelectDevices } from "../../components/Form/SelectDevices";
+import {
+  createOfflineMaintenanceId,
+  getOfflineMaintenance,
+  isNetworkError,
+  listOfflineMaintenances,
+  OfflineMaintenanceForm,
+  OfflineMaintenanceStatus,
+  removeOfflineMaintenance,
+  saveOfflineMaintenance,
+} from "../../services/offlineMaintenance";
 
 export const Repair = () => {
   type SectionKey = "diagnosis" | "services" | "checks" | "measurements" | "parts" | "result" | "comments" | "values" | "signatures";
@@ -73,6 +83,52 @@ export const Repair = () => {
   const navigation = useNavigation<any>();
   const [modal, setModal] = useState(false);
   const { session } = useAuth();
+  const localIdRef = useRef(route.params?.localId ?? createOfflineMaintenanceId());
+  const [localStatus, setLocalStatus] = useState<OfflineMaintenanceStatus>("draft");
+  const [localReady, setLocalReady] = useState(false);
+  const [localSaveError, setLocalSaveError] = useState("");
+  const startedAtRef = useRef(new Date().toISOString());
+  const latestLocalRecord = useRef<Parameters<typeof saveOfflineMaintenance>[0] | null>(null);
+
+  const restoreForm = (form: OfflineMaintenanceForm) => {
+    setSelectedCustomer(form.customer);
+    setSelectedDevice(form.device);
+    setServices(form.services);
+    setParts(form.parts);
+    setComments(form.comments);
+    setNotification(form.notification);
+    setReminderDays(form.reminderDays);
+    setIncrement(form.increment);
+    setDiscount(form.discount);
+    setDiagnosis(form.diagnosis);
+    setChecks(form.checks);
+    setMeasurements(form.measurements);
+    setResult(form.result);
+    setTechnicianSignatureSvg(form.technicianSignatureSvg);
+    setCustomerSignatureSvg(form.customerSignatureSvg);
+    setCustomerSignerName(form.customerSignerName);
+    startedAtRef.current = form.date;
+  };
+
+  useEffect(() => {
+    if (!session) return;
+    let active = true;
+    const scope = { userId: session.user.id, organizationId: session.organization.id };
+    (async () => {
+      const requested = route.params?.localId
+        ? await getOfflineMaintenance(route.params.localId, scope)
+        : (route.params?.customer || route.params?.device ? null : (await listOfflineMaintenances(scope)).find((item) => item.status === "draft") ?? null);
+      if (!active) return;
+      if (requested) {
+        localIdRef.current = requested.localId;
+        setLocalStatus(requested.status);
+        restoreForm(requested.form);
+        Alert.alert("Manutenção recuperada", "O preenchimento salvo neste dispositivo foi restaurado.");
+      }
+      setLocalReady(true);
+    })().catch(() => setLocalReady(true));
+    return () => { active = false; };
+  }, [route.params?.localId, session?.organization.id, session?.user.id]);
 
   useEffect(() => {
     if (selectedDevice.id && selectedDevice.Customer?.id !== selectedCustomer.id) {
@@ -125,6 +181,42 @@ export const Repair = () => {
     setChecks((current) => checksForServiceNames(services.map((item) => item.name), current));
   }, [services]);
 
+  useEffect(() => {
+    if (!session || !localReady || !selectedCustomer.id || !selectedDevice.id) return;
+    const timer = setTimeout(() => {
+      const form: OfflineMaintenanceForm = {
+        customerId: selectedCustomer.id, deviceId: selectedDevice.id, customer: selectedCustomer, device: selectedDevice,
+        services, parts, comments, total, date: startedAtRef.current, assignedTo: session.user.id,
+        reminderEnabled: notification, reminderIntervalDays: notification ? Number(reminderDays) || null : null,
+        reminderDueAt: null, diagnosis, checks, measurements, result, technicianName: session.user.name,
+        technicianSignatureSvg, customerSignatureSvg, customerSignerName,
+        signedAt: technicianSignatureSvg || customerSignatureSvg ? new Date().toISOString() : null,
+        notification, reminderDays, increment, discount,
+      };
+      const record = {
+        localId: localIdRef.current, userId: session.user.id, organizationId: session.organization.id,
+        status: localStatus, form,
+      };
+      latestLocalRecord.current = record;
+      saveOfflineMaintenance(record)
+        .then(() => setLocalSaveError(""))
+        .catch(() => setLocalSaveError("O rascunho não pôde ser atualizado neste dispositivo."));
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [checks, comments, customerSignatureSvg, customerSignerName, diagnosis, discount, increment, localReady, localStatus, measurements, notification, parts, reminderDays, result, selectedCustomer, selectedDevice, services, session, technicianSignatureSvg, total]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active" && latestLocalRecord.current) {
+        void saveOfflineMaintenance(latestLocalRecord.current);
+      }
+    });
+    return () => {
+      subscription.remove();
+      if (latestLocalRecord.current) void saveOfflineMaintenance(latestLocalRecord.current);
+    };
+  }, []);
+
   const handlerRegister = async () => {
     if (!selectedCustomer.id || !selectedDevice.id) {
       setOpenSection(null);
@@ -149,7 +241,7 @@ export const Repair = () => {
       parts,
       comments,
       total,
-      date: completedAt,
+      date: completedAt.toISOString(),
       assignedTo: session?.user.id,
       reminderEnabled: notification,
       reminderIntervalDays: notification ? intervalDays : null,
@@ -177,8 +269,19 @@ export const Repair = () => {
         {
           text: "Sim",
           onPress: async () => {
+            if (!session) return;
+            const scope = { userId: session.user.id, organizationId: session.organization.id };
+            const form: OfflineMaintenanceForm = {
+              ...newRepair, customer: selectedCustomer, device: selectedDevice,
+              notification, reminderDays, increment, discount,
+            };
             try {
-              const { data: workOrder } = await API.post("/repairs/add", newRepair);
+              await saveOfflineMaintenance({
+                localId: localIdRef.current, ...scope, status: "pending", form,
+              });
+              setLocalStatus("syncing");
+              const workOrder = await createRepairIdempotent(localIdRef.current, newRepair);
+              await removeOfflineMaintenance(localIdRef.current, scope);
               if (notification && reminderDueAt) {
                 try {
                   await scheduleMaintenanceReminder({
@@ -195,11 +298,32 @@ export const Repair = () => {
               }
               navigation.navigate("FinishedServices");
             } catch (error) {
-              console.log(error);
-              Alert.alert(
-                "Informação do Sistema",
-                "Não foi possível salvar, tente novamente."
-              );
+              if (isNetworkError(error)) {
+                setLocalStatus("pending");
+                try {
+                  await saveOfflineMaintenance({ localId: localIdRef.current, ...scope, status: "pending", form });
+                } catch {
+                  Alert.alert("Falha ao salvar localmente", "A manutenção não foi enviada e o dispositivo não conseguiu atualizar o rascunho. Não feche esta tela e tente novamente.");
+                  return;
+                }
+                Alert.alert(
+                  "Salvo neste dispositivo",
+                  "A manutenção foi concluída localmente e aguarda sincronização. Seus dados continuam seguros neste aparelho.",
+                  [{ text: "OK", onPress: () => navigation.navigate("FinishedServices") }]
+                );
+              } else {
+                setLocalStatus("error");
+                try {
+                  await saveOfflineMaintenance({
+                    localId: localIdRef.current, ...scope, status: "error", form,
+                    lastError: error instanceof Error ? error.message : "Falha no envio",
+                  });
+                } catch {
+                  Alert.alert("Falha ao salvar localmente", "O envio falhou e o dispositivo não conseguiu atualizar o rascunho. Não feche esta tela e tente novamente.");
+                  return;
+                }
+                Alert.alert("Manutenção não enviada", "O rascunho continua salvo neste dispositivo. Verifique os dados e tente novamente.");
+              }
             }
           },
           style: "destructive",
@@ -282,6 +406,7 @@ export const Repair = () => {
           <TotalLabel>TOTAL:</TotalLabel>
           <TotalValue>R$ {total.toFixed(2).replace(".", ",")}</TotalValue>
         </TotalArea>
+        {localSaveError ? <InfoText accessibilityLiveRegion="polite">{localSaveError}</InfoText> : null}
         <ButtonsArea>
           <Button
             type="cancel"

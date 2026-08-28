@@ -55,6 +55,15 @@ export const ReminderEmpty = styled.Text`
   padding: 14px; font-family: ${({ theme }) => theme.fonts.regular};
   font-size: ${({ theme }) => theme.typography.bodySmall.size}px; color: ${({ theme }) => theme.colors.muted};
 `;
+export const PendingCard = styled.TouchableOpacity`
+  min-height: 52px; margin-bottom: 18px; padding: 12px 14px; flex-direction: row; align-items: center; gap: 10px;
+  border-radius: ${({ theme }) => theme.radii.lg}px; border: 1px solid ${({ theme }) => theme.colors.syncPending};
+  background-color: ${({ theme }) => theme.colors.card};
+`;
+export const PendingText = styled.Text`
+  flex: 1; font-family: ${({ theme }) => theme.fonts.medium}; font-size: ${({ theme }) => theme.typography.bodySmall.size}px;
+  color: ${({ theme }) => theme.colors.foreground};
+`;
 export const ActionsGrid = styled.View`flex-direction: row; flex-wrap: wrap; gap: 12px;`;
 export const ButtonsArea = styled.View`
   padding: 12px 22px;

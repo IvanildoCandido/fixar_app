@@ -2,6 +2,22 @@
 
 Este registro complementa, mas não substitui, o histórico Git.
 
+## 2026-08-28 — QR Code público de equipamentos
+
+- Criado vínculo multiempresa com token não enumerável, desativado por padrão, revogável e rotacionável, sem liberar leitura anônima das tabelas de negócio.
+- O app ganhou modal para ativar, exibir, compartilhar e imprimir o QR público; o QR interno foi preservado separadamente.
+- O painel web ganhou rota `/e/:token`, ficha mobile-first, histórico resumido, próxima manutenção e WhatsApp opcional, com `noindex` e resposta genérica de indisponibilidade.
+- Typecheck nativo/web, 15 testes, build Vite e `git diff --check` foram aprovados. As migrations foram aplicadas e validadas no Supabase de desenvolvimento com rollback dos dados de teste.
+- Adicionada configuração versionada da Vercel para publicar dashboard e ficha pública no mesmo SPA, com build do monorepo, rewrite de `/e/:token`, cache de assets e headers defensivos.
+
+## 2026-08-28 — Offline simples para manutenção individual
+
+- Adicionado autosave local com debounce e flush ao sair/colocar o app em background, preservando formulário técnico e assinaturas.
+- Histórico e Home passaram a mostrar rascunhos e pendências isolados por usuário/organização, com edição, exclusão local e sincronização manual.
+- O app tenta reenviar pendências ao iniciar, voltar ao foreground e abrir o histórico, sem serviço permanente em background.
+- Aplicada a migration `20260828120000_offline_maintenance_idempotency.sql`, com UUID local único e RPC transacional para OS, itens, checks e medições.
+- Teste remoto com rollback confirmou idempotência, filhos completos, atomicidade e negação sem associação; Typecheck, 15 testes locais e bundle iOS também foram aprovados. Validação em dispositivo físico permanece pendente.
+
 ## 2026-08-24 — Inicialização do framework Codex
 
 - Criados `AGENTS.md` e a estrutura `docs/IA/` para orquestração, workflows, prompts, personas, gates, templates e memória.

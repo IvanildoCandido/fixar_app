@@ -29,6 +29,7 @@ import {
   normalizeEquipmentReference,
 } from "@fixar/qr-contract";
 import { supabase } from "./supabase";
+import { PublicEquipmentPage } from "./PublicEquipmentPage";
 
 type GeneratedCode = { reference: string; dataUrl: string };
 type Metrics = { users: number; organizations: number; customers: number; assets: number; work_orders: number; qr_codes: number; storage_files: number; storage_bytes: number };
@@ -40,7 +41,7 @@ const menuItems = [
   { label: "Usuários", icon: Users },
 ];
 
-function App() {
+function AdminApp() {
   const [session, setSession] = useState<Session | null>(null);
   const [authorized, setAuthorized] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
@@ -251,6 +252,11 @@ function formatBytes(bytes: number) {
 
 function WrenchMark() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4.3 4.3 0 0 0-5.5 5.5L4.4 16.6a2.1 2.1 0 1 0 3 3l4.8-4.8a4.3 4.3 0 0 0 5.5-5.5l-2.8 2.8-2.7-.7-.7-2.7 2.8-2.4Z" /></svg>;
+}
+
+function App() {
+  const match = window.location.pathname.match(/^\/e\/([^/]+)\/?$/i);
+  return match ? <PublicEquipmentPage token={match[1]} /> : <AdminApp />;
 }
 
 export default App;

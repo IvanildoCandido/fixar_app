@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Building2, ClipboardCheck, FileText, LogOut, Moon, Sun, Wrench } from "lucide-react-native";
+import { BarChart3, Bell, Building2, ClipboardCheck, CloudOff, FileText, LogOut, Moon, Sun, Wrench } from "lucide-react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useRef, useState } from "react";
 import { ScrollView } from "react-native";
@@ -12,8 +12,9 @@ import {
   Container, Content, Greeting, Header, HeaderTop, Kicker, SectionTitle,
   SignOutButton, Subtitle,
   ReminderCard, ReminderContent, ReminderDate, ReminderEmpty, ReminderList,
-  ReminderMeta, ReminderTitle, SectionHeaderRow, SectionLink,
+  ReminderMeta, ReminderTitle, SectionHeaderRow, SectionLink, PendingCard, PendingText,
 } from "./styles";
+import { listOfflineMaintenances } from "../../services/offlineMaintenance";
 
 const actions = [
   { label: "Nova ordem", Icon: ClipboardCheck, route: "Repair" },
@@ -30,6 +31,7 @@ export const Home = () => {
   const theme = useTheme();
   const [reminders, setReminders] = useState<MaintenanceReminder[]>([]);
   const [remindersTotal, setRemindersTotal] = useState(0);
+  const [pendingTotal, setPendingTotal] = useState(0);
   const contentRef = useRef<ScrollView>(null);
 
   useFocusEffect(
@@ -43,8 +45,13 @@ export const Home = () => {
         .catch(() => {
           if (active) setReminders([]);
         });
+      if (session) {
+        listOfflineMaintenances({ userId: session.user.id, organizationId: session.organization.id })
+          .then((items) => { if (active) setPendingTotal(items.length); })
+          .catch(() => { if (active) setPendingTotal(0); });
+      }
       return () => { active = false; };
-    }, [])
+    }, [session])
   );
 
   const reminderDateLabel = (dueAt: string) => {
@@ -79,6 +86,10 @@ export const Home = () => {
       </Header>
 
       <Content ref={contentRef} showsVerticalScrollIndicator={false}>
+        {pendingTotal > 0 ? <PendingCard accessibilityRole="button" accessibilityLabel={`${pendingTotal} manutenções locais`} onPress={() => navigation.navigate("FinishedServices")}>
+          <CloudOff size={20} color={theme.colors.syncPending} />
+          <PendingText>{pendingTotal} {pendingTotal === 1 ? "manutenção salva" : "manutenções salvas"} neste dispositivo</PendingText>
+        </PendingCard> : null}
         <SectionHeaderRow><SectionTitle>Próximas manutenções</SectionTitle>{remindersTotal > 5 ? <SectionLink onPress={() => navigation.navigate("MaintenanceReminders")}>Ver todas ({remindersTotal})</SectionLink> : null}</SectionHeaderRow>
         <ReminderList>
           {reminders.length ? reminders.slice(0, 5).map((reminder) => (

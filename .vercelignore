@@ -1,0 +1,10 @@
+android/
+ios/
+.expo/
+.codex/
+docs/
+supabase/
+tests/
+scripts/
+coverage/
+*.log
