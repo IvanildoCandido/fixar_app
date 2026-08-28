@@ -11,6 +11,7 @@ Este registro complementa, mas não substitui, o histórico Git.
 - Adicionada configuração versionada da Vercel para publicar dashboard e ficha pública no mesmo SPA, com build do monorepo, rewrite de `/e/:token`, cache de assets e headers defensivos.
 - A configuração passou a aceitar também projetos Vercel com Root Directory em `apps/admin-web`, incluindo manifesto local e alias compatível com o comando observado no primeiro build remoto.
 - O pacote TypeScript compartilhado `packages/qr-contract` recebeu `tsconfig` independente, evitando que builds web focados tentem resolver a configuração Expo da raiz.
+- Corrigido o grant do helper `private.is_platform_admin()` usado pelas policies de QR do painel; a ausência de `EXECUTE` causava `403` e fazia o dashboard descartar também as métricas carregadas com sucesso.
 
 ## 2026-08-28 — Offline simples para manutenção individual
 

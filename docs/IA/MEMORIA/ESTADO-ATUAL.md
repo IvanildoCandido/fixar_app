@@ -60,6 +60,7 @@ Este documento descreve o worktree observado, não produção.
 - QR público de equipamentos implementado e aplicado ao Supabase de desenvolvimento: técnicos podem criar, ativar, compartilhar, imprimir e rotacionar uma URL pública; `apps/admin-web` serve uma ficha mobile-first sem login com dados minimizados, histórico da mesma organização e contato opcional. Teste remoto com rollback confirmou revogação, rotação, remoção lógica e negação entre organizações.
 - Domínio público dos QRs configurado como `https://fixar.systechsolucoes.com.br` por meio de `EXPO_PUBLIC_FIXAR_WEB_URL`.
 - Publicação Vercel preparada na raiz do monorepo: `vercel.json` compila `apps/admin-web`, publica o dashboard em `/`, preserva a ficha pública em `/e/:token` por rewrite SPA e adiciona headers básicos; checklist em `docs/DEPLOY-VERCEL.md`.
+- Dashboard publicado em `fixar.systechsolucoes.com.br`; a migration de correção do grant de `private.is_platform_admin()` foi aplicada e validada como `authenticated`, eliminando o `403` da policy de `generated_qr_codes` observado em produção.
 
 ## Limitações da descoberta
 
