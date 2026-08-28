@@ -4,7 +4,6 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { ScanLine, X } from "lucide-react-native";
 import { useTheme } from "styled-components/native";
 import { Button } from "../../design-system";
-import { extractEquipmentReference } from "@fixar/qr-contract";
 import { CameraArea, CloseButton, Container, Frame, Header, HeaderCopy, Instruction, PermissionCard, PermissionText, PermissionTitle, ScannerIcon, Title } from "./styles";
 
 interface ModalProps { closeModal: React.Dispatch<SetStateAction<boolean>>; handleQRcode: (data: string) => void; }
@@ -12,7 +11,7 @@ interface ModalProps { closeModal: React.Dispatch<SetStateAction<boolean>>; hand
 export const ScannerQR = ({ closeModal, handleQRcode }: ModalProps) => {
   const theme = useTheme(); const [permission, requestPermission] = useCameraPermissions(); const [scanned, setScanned] = useState(false);
   useEffect(() => { if (permission && !permission.granted && permission.canAskAgain) requestPermission(); }, [permission, requestPermission]);
-  const handleBarCodeScanned = ({ data }: { type: string; data: string }) => { setScanned(true); handleQRcode(extractEquipmentReference(data)); closeModal(false); };
+  const handleBarCodeScanned = ({ data }: { type: string; data: string }) => { setScanned(true); handleQRcode(data); closeModal(false); };
 
   if (!permission?.granted) return <Container><PermissionCard><ScannerIcon><ScanLine size={28} color={theme.colors.primary} /></ScannerIcon><PermissionTitle>Acesso à câmera</PermissionTitle><PermissionText>Precisamos da câmera para identificar o código do equipamento.</PermissionText>{permission?.canAskAgain ? <Button label="Permitir acesso" onPress={requestPermission} /> : <PermissionText>Ative a câmera nos Ajustes do dispositivo para continuar.</PermissionText>}<Button label="Voltar" variant="ghost" onPress={() => closeModal(false)} /></PermissionCard></Container>;
 

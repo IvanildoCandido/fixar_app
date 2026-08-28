@@ -27,6 +27,8 @@ import { Alert, AppState, Modal, ScrollView } from "react-native";
 import { defaultCustomer, defaultDevice } from "../../utils/dafaultValues";
 import API, { createRepairIdempotent } from "../../services/API";
 import { ScannerQR } from "../../components/ScannerQR";
+import { extractEquipmentReference, extractFixarEquipmentToken } from "@fixar/qr-contract";
+import { resolveEquipmentQr } from "../../services/API";
 import { ButtonScan } from "../../components/AddDevice/styles";
 import { QrCode } from "lucide-react-native";
 import { useTheme } from "styled-components/native";
@@ -334,8 +336,11 @@ export const Repair = () => {
 
   const handleQRcode = async (data: string): Promise<void> => {
     try {
+      const publicBaseUrl = process.env.EXPO_PUBLIC_FIXAR_WEB_URL ?? "";
+      const token = publicBaseUrl ? extractFixarEquipmentToken(data, publicBaseUrl) : null;
+      const reference = token ? await resolveEquipmentQr(token) : extractEquipmentReference(data);
       const { data: device } = await API.post("devices/reference", {
-        reference: data,
+        reference,
       });
       setSelectedCustomer(device.Customer);
       setSelectedDevice(device);

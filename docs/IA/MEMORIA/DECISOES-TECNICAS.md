@@ -22,9 +22,10 @@ Detalhamento e modelo inicial: `docs/ARQUITETURA-SAAS.md`.
 
 ## 2026-08-28 — QR público pertencente à organização
 
-- O QR público usa uma tabela de vínculo separada, token UUID aleatório estável e consulta desativada por padrão; o UUID interno do equipamento não aparece na URL.
+- O equipamento possui uma única identidade QR em `equipment_public_links`, com token UUID aleatório estável e consulta pública desativada por padrão; o UUID interno não aparece na URL.
 - A leitura anônima ocorre somente pela RPC minimizada `get_public_equipment`; tabelas de equipamento, ordens e vínculos não recebem leitura anônima ampla.
-- O QR público por URL permanece separado do QR interno de referência. Uma futura transferência autorizada poderá reposicionar o vínculo preservando o token, sem deduplicação ou transferência nesta V1.
+- O QR codifica a URL pública. O scanner autenticado resolve o mesmo token somente na organização ativa e ignora `enabled`; payloads legados por referência continuam aceitos apenas para compatibilidade.
+- Uma futura transferência autorizada poderá reposicionar o vínculo preservando o token, sem deduplicação ou transferência nesta V1.
 
 ## 2026-08-28 — Administração global por RPC minimizada
 

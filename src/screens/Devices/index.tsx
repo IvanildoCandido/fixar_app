@@ -13,7 +13,7 @@ import { Loading } from "../../components/Loading";
 import { useFocusEffect } from "@react-navigation/native";
 import { EmptyState, ErrorState, SearchInput } from "../../design-system";
 import { invalidateQueries } from "../../services/queryCache";
-import { PublicEquipmentQr } from "../../components/PublicEquipmentQr";
+import { EquipmentQr } from "../../components/PublicEquipmentQr";
 
 export interface DeviceProps {
   Customer: Customer;
@@ -115,7 +115,7 @@ export const Devices = () => {
         <AddDevice closeModal={setDevicesModal} dataEdit={dataEdit} />
       </Modal>
       <Modal visible={Boolean(publicQrDevice)} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setPublicQrDevice(null)}>
-        {publicQrDevice ? <PublicEquipmentQr device={publicQrDevice} onClose={() => setPublicQrDevice(null)} /> : null}
+        {publicQrDevice ? <EquipmentQr device={publicQrDevice} onClose={() => setPublicQrDevice(null)} /> : null}
       </Modal>
     </Container>
   );

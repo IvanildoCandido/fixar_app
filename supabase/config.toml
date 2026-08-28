@@ -1,0 +1,18 @@
+project_id = "gcdhtfytpatvesadeyim"
+
+[api]
+enabled = true
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+major_version = 17
+
+[studio]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "https://fixar.systechsolucoes.com.br"
+additional_redirect_urls = ["exp://127.0.0.1:8081", "http://localhost:8081"]

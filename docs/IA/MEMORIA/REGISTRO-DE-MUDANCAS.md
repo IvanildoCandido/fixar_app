@@ -14,6 +14,8 @@ Este registro complementa, mas não substitui, o histórico Git.
 - Corrigido o grant do helper `private.is_platform_admin()` usado pelas policies de QR do painel; a ausência de `EXECUTE` causava `403` e fazia o dashboard descartar também as métricas carregadas com sucesso.
 - Finalizado o dashboard global: menu e indicadores navegáveis, organizações e usuários reais, contagens operacionais por empresa, geração sequencial de referências, associação/filtro/exclusão de QR Codes e configurações do ambiente.
 - Aplicada a migration `complete_platform_admin_dashboard`; validação com rollback confirmou leitura e escrita administrativa e bloqueio de usuário comum. Build Vite e 18 testes foram aprovados.
+- QR de equipamento unificado: URL/token único para câmera comum e scanner autenticado, resolução limitada à organização ativa independente da exposição pública, backfill/trigger para identidades e compatibilidade legada. Migration aplicada; 156 equipamentos ativos possuem 156 identidades, token inválido retorna ausência, TypeScript, build Vite e 19 testes passaram.
+- Supabase CLI autenticado/vinculado e histórico remoto reconciliado com as versões locais; dry-run confirmou e aplicou somente a migration pendente, sem reaplicar schema anterior.
 
 ## 2026-08-28 — Offline simples para manutenção individual
 

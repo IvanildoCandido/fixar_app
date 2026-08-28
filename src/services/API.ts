@@ -205,6 +205,17 @@ export async function manageEquipmentPublicLink(assetId: string, enabled?: boole
   if (!link) throw new Error("Não foi possível gerar o QR Code público.");
   return { publicToken: link.public_token, enabled: link.enabled };
 }
+
+export async function resolveEquipmentQr(token: string): Promise<string> {
+  const organizationId = requireOrganization();
+  const { data, error } = await supabase.rpc("resolve_equipment_qr", {
+    token,
+    target_organization_id: organizationId,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("Este QR Code não pertence à organização ativa.");
+  return data as string;
+}
 export async function listRepairDetailsForReport(filters: RepairFilters = {}): Promise<Repair[]> {
   const organizationId = requireOrganization();
   let query = supabase.from("work_orders")

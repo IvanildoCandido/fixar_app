@@ -102,7 +102,7 @@ export const DeviceItem = ({
         </Label>
       </InfoArea>
       <IconsArea>
-        <TouchAction accessibilityLabel="QR Code público" onPress={onPublicQr}>
+        <TouchAction accessibilityLabel="QR Code do equipamento" onPress={onPublicQr}>
           <QrCode size={18} color={theme.colors.primary} />
         </TouchAction>
         <TouchAction accessibilityLabel="Editar equipamento" onPress={() => handlerEdit(id)}>

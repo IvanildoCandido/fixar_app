@@ -20,6 +20,7 @@ import { Customer, Device } from "../../types/data";
 import { defaultCustomer } from "../../utils/dafaultValues";
 import API from "../../services/API";
 import { ScannerQR } from "../ScannerQR";
+import { extractEquipmentReference } from "@fixar/qr-contract";
 import { ChoiceChips, CollapsibleSection } from "../TechnicalMaintenance";
 
 interface ModalProps {
@@ -55,8 +56,9 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
   const [phase, setPhase] = useState<Device["phase"]>(dataEdit.phase ?? undefined);
 
   const handleQRcode = (data: string): void => {
-    setReference(data);
-    setValue("reference", data);
+    const parsedReference = extractEquipmentReference(data);
+    setReference(parsedReference);
+    setValue("reference", parsedReference);
     clearErrors("reference");
   };
 

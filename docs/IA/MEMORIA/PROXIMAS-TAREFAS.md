@@ -8,7 +8,7 @@ Evoluir o Fixar para um produto multiempresa e multiusuário, com possibilidade 
 
 ## Sequência proposta
 
-1. Importar a raiz do repositório na Vercel, cadastrar as variáveis públicas, associar `fixar.systechsolucoes.com.br` e validar `/` e `/e/token-invalido` conforme `docs/DEPLOY-VERCEL.md`.
+1. Publicar o app e dashboard atualizados e validar o mesmo QR na câmera comum e no scanner FIXAR em aparelho físico, incluindo OFF/ON e tentativa cross-tenant.
 2. Validar offline em aparelho físico: recuperação após encerramento, assinaturas, edição/exclusão local, logout entre usuários, resposta perdida, sincronização manual/automática e PDF local.
 3. Testar login, geração, persistência e recarga de QR Code no `apps/admin-web` com a conta global.
 4. Implementar API administrativa para métricas de banda e demais limites que não são expostos pelo cliente público.

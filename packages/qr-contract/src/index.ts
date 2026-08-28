@@ -23,6 +23,18 @@ export function extractEquipmentReference(data: string): string {
   return normalizeEquipmentReference(reference);
 }
 
+export function extractFixarEquipmentToken(data: string, publicBaseUrl: string): string | null {
+  try {
+    const scanned = new URL(data);
+    const expected = new URL(publicBaseUrl);
+    if (scanned.origin !== expected.origin) return null;
+    const match = scanned.pathname.match(/^\/e\/([0-9a-f-]{36})\/?$/i);
+    return match?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function createEquipmentReference(randomValues?: Uint32Array): string {
   const values = randomValues ?? crypto.getRandomValues(new Uint32Array(REFERENCE_LENGTH));
   return Array.from({ length: REFERENCE_LENGTH }, (_, index) => (

@@ -8,7 +8,7 @@ import { Button, FormModal, Spinner } from "../../design-system";
 import { DeviceProps } from "../../screens/Devices";
 import { manageEquipmentPublicLink } from "../../services/API";
 
-export function PublicEquipmentQr({ device, onClose }: { device: DeviceProps; onClose: () => void }) {
+export function EquipmentQr({ device, onClose }: { device: DeviceProps; onClose: () => void }) {
   const theme = useTheme();
   const [token, setToken] = useState("");
   const [enabled, setEnabled] = useState(false);
@@ -22,7 +22,7 @@ export function PublicEquipmentQr({ device, onClose }: { device: DeviceProps; on
     try {
       const link = await manageEquipmentPublicLink(device.id);
       setToken(link.publicToken); setEnabled(link.enabled);
-    } catch { Alert.alert("QR Code público", "Não foi possível carregar esta configuração."); }
+    } catch { Alert.alert("QR Code do equipamento", "Não foi possível carregar esta configuração."); }
     finally { setLoading(false); }
   }
   useEffect(() => { void load(); }, [device.id]);
@@ -31,12 +31,12 @@ export function PublicEquipmentQr({ device, onClose }: { device: DeviceProps; on
   async function toggle(value: boolean) {
     setSaving(true);
     try { const link = await manageEquipmentPublicLink(device.id, value); setEnabled(link.enabled); }
-    catch { Alert.alert("QR Code público", "Não foi possível alterar a consulta pública."); }
+    catch { Alert.alert("QR Code do equipamento", "Não foi possível alterar a consulta pública."); }
     finally { setSaving(false); }
   }
   function rotate() {
-    Alert.alert("Gerar um novo QR Code?", "O QR atual deixará de funcionar imediatamente.", [{ text: "Cancelar", style: "cancel" }, { text: "Gerar novo", style: "destructive", onPress: async () => {
-      setSaving(true); try { const link = await manageEquipmentPublicLink(device.id, undefined, true); setToken(link.publicToken); } catch { Alert.alert("QR Code público", "Não foi possível gerar um novo código."); } finally { setSaving(false); }
+    Alert.alert("Invalidar QR atual?", "ATENÇÃO: o QR Code colado no equipamento deixará de funcionar. Será necessário imprimir e substituir a etiqueta física.", [{ text: "Cancelar", style: "cancel" }, { text: "Invalidar e substituir", style: "destructive", onPress: async () => {
+      setSaving(true); try { const link = await manageEquipmentPublicLink(device.id, undefined, true); setToken(link.publicToken); } catch { Alert.alert("QR Code do equipamento", "Não foi possível invalidar o código atual."); } finally { setSaving(false); }
     } }]);
   }
   async function print() {
@@ -44,14 +44,16 @@ export function PublicEquipmentQr({ device, onClose }: { device: DeviceProps; on
     await Print.printAsync({ html: `<html><body style="font-family:Arial;text-align:center;padding:40px"><h1>${device.reference}</h1><p>${device.brand} ${device.model} • ${device.location}</p>${svg}<p>${url}</p></body></html>` });
   }
 
-  return <FormModal title="QR Code público" description="Ficha pública segura para colar no equipamento." onClose={onClose} footer={<><FooterButton label="Fechar" variant="secondary" onPress={onClose} /><FooterButton label="Compartilhar" disabled={!url} onPress={() => Share.share({ message: `Equipamento ${device.reference}: ${url}` })} /></>}>
+  return <FormModal title="QR Code do equipamento" description="Uma única etiqueta para identificação no FIXAR e consulta pelo cliente." onClose={onClose} footer={<><FooterButton label="Fechar" variant="secondary" onPress={onClose} /><FooterButton label="Compartilhar" disabled={!url} onPress={() => Share.share({ message: `Equipamento ${device.reference}: ${url}` })} /></>}>
     {loading ? <Spinner /> : !baseUrl ? <Notice>Configure EXPO_PUBLIC_FIXAR_WEB_URL para gerar o endereço público.</Notice> : <Content>
       <Identity>{device.reference}</Identity><Meta>{[device.brand, device.model, device.location].filter(Boolean).join(" • ")}</Meta>
       {svg ? <QrFrame><SvgXml xml={svg} width={240} height={240} /></QrFrame> : null}
-      <Setting><SettingCopy><SettingTitle>Consulta pública</SettingTitle><Meta>{enabled ? "Ativa para quem escanear" : "Desativada"}</Meta></SettingCopy><Switch accessibilityLabel="Ativar consulta pública" value={enabled} disabled={saving} onValueChange={toggle} trackColor={{ false: theme.colors.border, true: theme.colors.primary }} /></Setting>
+      <Setting><SettingCopy><SettingTitle>Consulta pública</SettingTitle><Meta>{enabled ? "Cliente pode consultar pela câmera do celular" : "Desativada; identificação interna continua funcionando"}</Meta></SettingCopy><Switch accessibilityLabel="Ativar consulta pública" value={enabled} disabled={saving} onValueChange={toggle} trackColor={{ false: theme.colors.border, true: theme.colors.primary }} /></Setting>
+      <Notice>Quando ativada, seu cliente poderá escanear este mesmo QR com a câmera do celular para consultar o histórico do equipamento.</Notice>
       <Url selectable>{url}</Url>
-      <ActionRow><ActionButton label="Imprimir" variant="secondary" onPress={print} /><ActionButton label="Gerar novo QR" variant="ghost" loading={saving} onPress={rotate} /></ActionRow>
-      <Notice>O QR interno de identificação continua separado e não foi alterado.</Notice>
+      <ActionRow><ActionButton label="Imprimir etiqueta" variant="secondary" onPress={print} /></ActionRow>
+      <AdvancedTitle>Opção avançada de segurança</AdvancedTitle>
+      <Button label="Invalidar QR atual" variant="destructive" loading={saving} onPress={rotate} />
     </Content>}
   </FormModal>;
 }
@@ -68,3 +70,4 @@ const ActionRow = styled.View`flex-direction: row; gap: ${({ theme }) => theme.s
 const ActionButton = styled(Button)`flex: 1;`;
 const FooterButton = styled(Button)`flex: 1;`;
 const Notice = styled.Text`font-family: ${({ theme }) => theme.fonts.regular}; font-size: ${({ theme }) => theme.typography.caption.size}px; line-height: ${({ theme }) => theme.typography.caption.lineHeight}px; color: ${({ theme }) => theme.colors.muted};`;
+const AdvancedTitle = styled.Text`margin-top: ${({ theme }) => theme.spacing.md}px; font-family: ${({ theme }) => theme.fonts.medium}; font-size: ${({ theme }) => theme.typography.caption.size}px; color: ${({ theme }) => theme.colors.danger};`;
