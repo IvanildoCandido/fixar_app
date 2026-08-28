@@ -12,6 +12,8 @@ Este registro complementa, mas não substitui, o histórico Git.
 - A configuração passou a aceitar também projetos Vercel com Root Directory em `apps/admin-web`, incluindo manifesto local e alias compatível com o comando observado no primeiro build remoto.
 - O pacote TypeScript compartilhado `packages/qr-contract` recebeu `tsconfig` independente, evitando que builds web focados tentem resolver a configuração Expo da raiz.
 - Corrigido o grant do helper `private.is_platform_admin()` usado pelas policies de QR do painel; a ausência de `EXECUTE` causava `403` e fazia o dashboard descartar também as métricas carregadas com sucesso.
+- Finalizado o dashboard global: menu e indicadores navegáveis, organizações e usuários reais, contagens operacionais por empresa, geração sequencial de referências, associação/filtro/exclusão de QR Codes e configurações do ambiente.
+- Aplicada a migration `complete_platform_admin_dashboard`; validação com rollback confirmou leitura e escrita administrativa e bloqueio de usuário comum. Build Vite e 18 testes foram aprovados.
 
 ## 2026-08-28 — Offline simples para manutenção individual
 

@@ -1,262 +1,77 @@
 import { FormEvent, useEffect, useState } from "react";
 import QRCode from "qrcode";
 import type { Session } from "@supabase/supabase-js";
-import {
-  Activity,
-  ArrowUpRight,
-  BarChart3,
-  Boxes,
-  Check,
-  ChevronRight,
-  CircleHelp,
-  Database,
-  Download,
-  FileText,
-  Gauge,
-  LayoutDashboard,
-  LogOut,
-  Plus,
-  Printer,
-  QrCode,
-  Settings,
-  ShieldCheck,
-  Users,
-  X,
-} from "lucide-react";
-import {
-  createEquipmentQrPayload,
-  createEquipmentReference,
-  normalizeEquipmentReference,
-} from "@fixar/qr-contract";
+import { Activity, Boxes, Database, Download, LayoutDashboard, LogOut, Plus, QrCode, RefreshCw, Search, Settings, ShieldCheck, Trash2, Users, X } from "lucide-react";
+import { createEquipmentQrPayload } from "@fixar/qr-contract";
 import { supabase } from "./supabase";
 import { PublicEquipmentPage } from "./PublicEquipmentPage";
+import { createReferenceSequence } from "./referenceSequence";
 
-type GeneratedCode = { reference: string; dataUrl: string };
+type View = "overview" | "qrcodes" | "organizations" | "users" | "settings";
 type Metrics = { users: number; organizations: number; customers: number; assets: number; work_orders: number; qr_codes: number; storage_files: number; storage_bytes: number };
+type Organization = { id: string; name: string; email: string | null; phone: string | null; created_at: string; customers: number; assets: number; work_orders: number; members: number; qr_codes: number };
+type AdminUser = { id: string; email: string; display_name: string | null; created_at: string; last_sign_in_at: string | null; organizations: number };
+type StoredQr = { id: string; reference: string; payload: string; organization_id: string | null; organization_name: string | null; created_at: string; dataUrl: string };
 
-const menuItems = [
-  { label: "Visão geral", icon: LayoutDashboard, active: true },
-  { label: "QR Codes", icon: QrCode },
-  { label: "Organizações", icon: Boxes },
-  { label: "Usuários", icon: Users },
+const navItems: { id: View; label: string; icon: typeof Users }[] = [
+  { id: "overview", label: "Visão geral", icon: LayoutDashboard }, { id: "qrcodes", label: "QR Codes", icon: QrCode },
+  { id: "organizations", label: "Organizações", icon: Boxes }, { id: "users", label: "Usuários", icon: Users },
 ];
+const viewTitles: Record<View, string> = { overview: "Visão geral", qrcodes: "QR Codes", organizations: "Organizações", users: "Usuários", settings: "Configurações" };
 
 function AdminApp() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [authorized, setAuthorized] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authError, setAuthError] = useState("");
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [loadingMetrics, setLoadingMetrics] = useState(false);
-  const [dashboardError, setDashboardError] = useState("");
-  const [referenceInput, setReferenceInput] = useState("");
-  const [quantity, setQuantity] = useState(1);
-  const [codes, setCodes] = useState<GeneratedCode[]>([]);
-  const [error, setError] = useState("");
-  const [showAll, setShowAll] = useState(false);
+  const [session, setSession] = useState<Session | null>(null); const [authorized, setAuthorized] = useState(false); const [authLoading, setAuthLoading] = useState(true); const [authError, setAuthError] = useState("");
+  const [view, setView] = useState<View>("overview"); const [metrics, setMetrics] = useState<Metrics | null>(null); const [organizations, setOrganizations] = useState<Organization[]>([]); const [users, setUsers] = useState<AdminUser[]>([]); const [codes, setCodes] = useState<StoredQr[]>([]);
+  const [loading, setLoading] = useState(false); const [dashboardError, setDashboardError] = useState(""); const [referenceInput, setReferenceInput] = useState(""); const [quantity, setQuantity] = useState(1); const [organizationId, setOrganizationId] = useState(""); const [qrFilter, setQrFilter] = useState(""); const [query, setQuery] = useState(""); const [formError, setFormError] = useState("");
 
-  useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (mounted) void loadSession(data.session);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (mounted) void loadSession(nextSession);
-    });
-    return () => { mounted = false; listener.subscription.unsubscribe(); };
-  }, []);
-
-  async function loadSession(nextSession: Session | null) {
-    setAuthLoading(true);
-    setSession(nextSession);
-    setAuthorized(false);
-    setMetrics(null);
-    if (!nextSession) { setAuthLoading(false); return; }
-    const { data, error } = await supabase.from("platform_admins").select("user_id").eq("user_id", nextSession.user.id).maybeSingle();
-    if (error || !data) {
-      await supabase.auth.signOut();
-      setAuthError("Esta conta não tem acesso ao painel global.");
-      setAuthLoading(false);
-      return;
-    }
-    setAuthorized(true);
-    setAuthLoading(false);
-    await loadDashboardData();
-  }
+  useEffect(() => { let mounted = true; supabase.auth.getSession().then(({ data }) => { if (mounted) void loadSession(data.session); }); const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => { if (mounted) void loadSession(next); }); return () => { mounted = false; listener.subscription.unsubscribe(); }; }, []);
+  async function loadSession(next: Session | null) { setAuthLoading(true); setSession(next); setAuthorized(false); if (!next) { setAuthLoading(false); return; } const { data, error } = await supabase.from("platform_admins").select("user_id").eq("user_id", next.user.id).maybeSingle(); if (error || !data) { await supabase.auth.signOut(); setAuthError("Esta conta não tem acesso ao painel global."); setAuthLoading(false); return; } setAuthorized(true); setAuthLoading(false); await loadDashboardData(); }
 
   async function loadDashboardData() {
-    setLoadingMetrics(true);
-    setDashboardError("");
-    try {
-      const [{ data: metricData, error: metricError }, { data: qrData, error: qrError }] = await Promise.all([
-        supabase.rpc("platform_admin_metrics"),
-        supabase.from("generated_qr_codes").select("reference, payload").order("created_at", { ascending: false }).limit(48),
-      ]);
-      if (metricError || qrError) throw new Error("Falha ao carregar dados do painel.");
-      if (metricData) setMetrics(metricData as Metrics);
-      if (qrData) {
-        const restored = await Promise.all(qrData.map(async (row) => ({ reference: row.reference, dataUrl: await QRCode.toDataURL(row.payload, { width: 480, margin: 2, color: { dark: "#10261d", light: "#ffffff" } }) })));
-        setCodes(restored);
-      }
-    } catch {
-      setDashboardError("Não foi possível atualizar os dados. Tente novamente.");
-    } finally {
-      setLoadingMetrics(false);
-    }
+    setLoading(true); setDashboardError("");
+    const [metricResult, organizationResult, userResult, qrResult] = await Promise.all([supabase.rpc("platform_admin_metrics"), supabase.rpc("platform_admin_organizations"), supabase.rpc("platform_admin_users"), supabase.rpc("platform_admin_qr_codes", { target_organization_id: null })]);
+    if (metricResult.data) setMetrics(metricResult.data as Metrics); if (organizationResult.data) { const rows = organizationResult.data as Organization[]; setOrganizations(rows); setOrganizationId((current) => current || rows[0]?.id || ""); } if (userResult.data) setUsers(userResult.data as AdminUser[]);
+    if (qrResult.data) setCodes(await Promise.all((qrResult.data as Omit<StoredQr, "dataUrl">[]).map(async (row) => ({ ...row, dataUrl: await QRCode.toDataURL(row.payload, { width: 480, margin: 2, color: { dark: "#10261d", light: "#ffffff" } }) }))));
+    if (metricResult.error || organizationResult.error || userResult.error || qrResult.error) setDashboardError("Parte dos dados não pôde ser atualizada. Tente novamente."); setLoading(false);
   }
-
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setAuthError("");
-    const form = new FormData(event.currentTarget);
-    const { error } = await supabase.auth.signInWithPassword({ email: String(form.get("email")).trim().toLowerCase(), password: String(form.get("password")) });
-    if (error) setAuthError("E-mail ou senha inválidos.");
-  }
-
+  async function handleLogin(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setAuthError(""); const form = new FormData(event.currentTarget); const { error } = await supabase.auth.signInWithPassword({ email: String(form.get("email")).trim().toLowerCase(), password: String(form.get("password")) }); if (error) setAuthError("E-mail ou senha inválidos."); }
   async function signOut() { await supabase.auth.signOut(); setCodes([]); }
-
   async function generateCodes() {
-    setError("");
-    const references = referenceInput.trim()
-      ? [normalizeEquipmentReference(referenceInput)]
-      : Array.from({ length: quantity }, () => createEquipmentReference());
-
-    if (references.some((reference) => reference.length !== 7)) {
-      setError("Informe uma referência com 7 caracteres ou deixe vazio para gerar automaticamente.");
-      return;
-    }
-
-    const generated = await Promise.all(references.map(async (reference) => ({
-      reference,
-      payload: createEquipmentQrPayload(reference),
-      dataUrl: await QRCode.toDataURL(createEquipmentQrPayload(reference), {
-        width: 480,
-        margin: 2,
-        color: { dark: "#10261d", light: "#ffffff" },
-      }),
-    })));
-    if (!session) return;
-    const { error: insertError } = await supabase.from("generated_qr_codes").insert(generated.map(({ reference, payload }) => ({ reference, payload, generated_by: session.user.id })));
-    if (insertError) { setError(insertError.code === "23505" ? "Uma ou mais referências já existem. Gere novamente." : "Não foi possível persistir os QR Codes."); return; }
-    setCodes(generated.map(({ reference, dataUrl }) => ({ reference, dataUrl })));
-    setMetrics((current) => current ? { ...current, qr_codes: current.qr_codes + generated.length } : current);
+    setFormError(""); if (!session || !organizationId) { setFormError("Selecione a empresa responsável pelos QR Codes."); return; }
+    let references: string[]; try { references = createReferenceSequence(referenceInput, quantity); } catch (error) { setFormError((error as Error).message); return; }
+    if (references.some((reference) => reference.length !== 7)) { setFormError("Cada referência deve possuir exatamente 7 caracteres."); return; }
+    const rows = references.map((reference) => ({ reference, payload: createEquipmentQrPayload(reference), generated_by: session.user.id, organization_id: organizationId }));
+    const { error } = await supabase.from("generated_qr_codes").insert(rows); if (error) { setFormError(error.code === "23505" ? "Uma referência desta sequência já existe." : "Não foi possível salvar os QR Codes."); return; }
+    setReferenceInput(""); setQuantity(1); await loadDashboardData(); setView("qrcodes");
   }
+  async function deleteCode(code: StoredQr) { if (!window.confirm(`Excluir definitivamente o QR Code ${code.reference}?`)) return; const { error } = await supabase.from("generated_qr_codes").delete().eq("id", code.id); if (error) { setDashboardError("Não foi possível excluir o QR Code."); return; } setCodes((current) => current.filter((item) => item.id !== code.id)); setMetrics((current) => current ? { ...current, qr_codes: Math.max(0, current.qr_codes - 1) } : current); }
+  function downloadCode(code: StoredQr) { const link = document.createElement("a"); link.download = `fixar-${code.reference}.png`; link.href = code.dataUrl; link.click(); }
 
-  function downloadCode(code: GeneratedCode) {
-    const link = document.createElement("a");
-    link.download = `fixar-${code.reference}.png`;
-    link.href = code.dataUrl;
-    link.click();
-  }
-
-  function printCodes() {
-    if (!codes.length) return;
-    window.print();
-  }
-
-  const visibleCodes = showAll ? codes : codes.slice(0, 6);
-  const ownerName = String(session?.user.user_metadata?.display_name || session?.user.email?.split("@")[0] || "Proprietário");
-  const ownerInitials = ownerName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-
-  if (authLoading) return <div className="auth-screen"><div className="auth-box"><div className="brand-mark"><WrenchMark /></div><span className="eyebrow">FIXAR ADMIN</span><h1>Carregando painel</h1><p>Validando seu acesso seguro.</p></div></div>;
-  if (!session || !authorized) return <LoginScreen error={authError} onSubmit={handleLogin} />;
-
-  return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand-lockup">
-          <div className="brand-mark"><WrenchMark /></div>
-          <div><strong>fixar</strong><span>painel do proprietário</span></div>
-        </div>
-        <div className="workspace-label">OPERAÇÃO</div>
-        <nav className="main-nav" aria-label="Navegação principal">
-          {menuItems.map(({ label, icon: Icon, active }) => (
-            <button className={`nav-item ${active ? "active" : ""}`} key={label} type="button">
-              <Icon size={18} strokeWidth={active ? 2.4 : 1.8} />
-              <span>{label}</span>
-              {active && <ChevronRight size={15} className="nav-chevron" />}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-spacer" />
-        <div className="system-card">
-          <div className="system-card-icon"><ShieldCheck size={18} /></div>
-          <div><strong>Ambiente seguro</strong><span>Dados administrativos protegidos</span></div>
-        </div>
-        <button className="nav-item" type="button"><Settings size={18} /><span>Configurações</span></button>
-        <button className="nav-item" type="button"><CircleHelp size={18} /><span>Ajuda</span></button>
-        <div className="profile-row">
-          <div className="avatar">{ownerInitials}</div>
-          <div><strong>{ownerName}</strong><span>Proprietário</span></div>
-          <LogOut size={17} className="profile-action" />
-        </div>
-      </aside>
-
-      <main className="main-content">
-        <header className="topbar">
-          <div><span className="eyebrow">CENTRAL DE CONTROLE</span><h1>Visão geral</h1></div>
-          <div className="topbar-actions"><span className="live-dot"><i /> Operação local</span><button className="icon-button" aria-label="Configurações" type="button"><Settings size={19} /></button></div>
-        </header>
-
-        <div className="content-wrap">
-          <section className="welcome-row">
-            <div><h2>Bom dia, {ownerName.split(/\s+/)[0]}.</h2><p>Acompanhe a operação do Fixar e cuide dos detalhes que mantêm tudo em movimento.</p></div>
-            <div className="date-chip">27 AGO 2026 <span>•</span> QUINTA-FEIRA</div>
-          </section>
-
-          <section className="metric-grid" aria-label="Indicadores do sistema">
-            <MetricCard label="Usuários cadastrados" value={metrics ? String(metrics.users) : "…"} detail="Contas no Auth" icon={Users} tone="green" />
-            <MetricCard label="Organizações" value={metrics ? String(metrics.organizations) : "…"} detail={`${metrics?.customers ?? "…"} clientes cadastrados`} icon={Boxes} tone="blue" />
-            <MetricCard label="Armazenamento" value={metrics ? formatBytes(metrics.storage_bytes) : "…"} detail={metrics ? `${metrics.storage_files} arquivos` : "Consultando banco"} icon={Database} tone="amber" />
-            <MetricCard label="Ordens de serviço" value={metrics ? String(metrics.work_orders) : "…"} detail={metrics ? `${metrics.assets} equipamentos ativos` : "Consultando banco"} icon={Activity} tone="red" />
-          </section>
-          {dashboardError && <div className="dashboard-error" role="alert"><X size={16} />{dashboardError}</div>}
-
-          <section className="primary-grid">
-            <div className="panel qr-panel">
-              <div className="panel-heading"><div><span className="section-kicker"><QrCode size={15} /> IDENTIFICAÇÃO</span><h3>Gerar QR Codes</h3><p>Crie etiquetas de equipamento compatíveis com o app Fixar.</p></div><span className="local-badge">GERAÇÃO LOCAL</span></div>
-              <div className="generator-form">
-                <label>Referência do equipamento <span>opcional</span><input value={referenceInput} onChange={(event) => setReferenceInput(event.target.value)} placeholder="Ex.: FXR8K2M" maxLength={20} /></label>
-                <div className="form-divider"><span>ou gere automaticamente</span></div>
-                <label className="quantity-label">Quantidade <div className="stepper"><button aria-label="Diminuir quantidade" disabled={quantity <= 1} onClick={() => setQuantity((current) => Math.max(1, current - 1))} type="button">−</button><strong>{quantity}</strong><button aria-label="Aumentar quantidade" disabled={quantity >= 24} onClick={() => setQuantity((current) => Math.min(24, current + 1))} type="button">+</button></div></label>
-                {error && <div className="form-error"><X size={15} />{error}</div>}
-                <button className="primary-button" onClick={generateCodes} type="button"><Plus size={18} /> Gerar {referenceInput.trim() ? "QR Code" : `${quantity} QR Code${quantity > 1 ? "s" : ""}`}</button>
-              </div>
-              <div className="panel-note"><ShieldCheck size={16} /><span>O código é criado no navegador e não envia informações para serviços externos.</span></div>
-            </div>
-            <div className="panel insight-panel"><div className="section-kicker"><Gauge size={15} /> PRÓXIMOS INDICADORES</div><h3>Seu painel está pronto para crescer.</h3><p>Os dados operacionais já estão conectados. Novos indicadores administrativos entram conforme as fontes forem integradas.</p><div className="insight-list"><div><BarChart3 size={17} /><span>Uso por organização</span><em>planejado</em></div><div><Database size={17} /><span>Saúde do banco</span><em>planejado</em></div><div><FileText size={17} /><span>Auditoria de ações</span><em>planejado</em></div></div></div>
-          </section>
-
-          {codes.length > 0 && <section className="panel codes-panel" id="qr-results"><div className="panel-heading results-heading"><div><span className="section-kicker"><Check size={15} /> PRONTOS PARA USO</span><h3>QR Codes gerados</h3><p>{codes.length} etiqueta{codes.length > 1 ? "s" : ""} criada{codes.length > 1 ? "s" : ""} nesta sessão.</p></div><div className="results-actions"><button className="secondary-button" onClick={printCodes} type="button"><Printer size={17} /> Imprimir</button><button className="icon-button" onClick={() => setCodes([])} aria-label="Fechar resultados" type="button"><X size={18} /></button></div></div><div className="code-grid">{visibleCodes.map((code) => <article className="code-card" key={code.reference}><div className="code-image-wrap"><img src={code.dataUrl} alt={`QR Code da referência ${code.reference}`} /></div><div className="code-card-footer"><div><span>REFERÊNCIA</span><strong>{code.reference}</strong></div><button className="download-button" onClick={() => downloadCode(code)} aria-label={`Baixar QR Code ${code.reference}`} type="button"><Download size={17} /></button></div></article>)}</div>{codes.length > 6 && <button className="show-more" onClick={() => setShowAll((current) => !current)} type="button">{showAll ? "Mostrar menos" : `Ver os ${codes.length} códigos`} <ArrowUpRight size={16} /></button>}</section>}
-
-          <footer className="footer-note"><span><span className="status-pip" /> Fixar Admin <b>v1.0</b></span><span>{loadingMetrics ? "Atualizando dados..." : "Dados atualizados agora"} · <button className="footer-action" onClick={loadDashboardData} type="button">Atualizar</button> · <button className="footer-action" onClick={signOut} type="button">Sair</button></span></footer>
-        </div>
-      </main>
-    </div>
-  );
+  const ownerName = String(session?.user.user_metadata?.display_name || session?.user.email?.split("@")[0] || "Proprietário"); const initials = ownerName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+  if (authLoading) return <LoadingScreen />; if (!session || !authorized) return <LoginScreen error={authError} onSubmit={handleLogin} />;
+  return <div className="app-shell"><aside className="sidebar"><div className="brand-lockup"><div className="brand-mark"><WrenchMark /></div><div><strong>fixar</strong><span>painel do proprietário</span></div></div><div className="workspace-label">OPERAÇÃO</div><nav className="main-nav">{navItems.map(({ id, label, icon: Icon }) => <button className={`nav-item ${view === id ? "active" : ""}`} key={id} onClick={() => setView(id)} type="button"><Icon size={18} /><span>{label}</span></button>)}</nav><div className="sidebar-spacer" /><div className="system-card"><ShieldCheck size={18} /><div><strong>Ambiente seguro</strong><span>Dados administrativos protegidos</span></div></div><button className={`nav-item ${view === "settings" ? "active" : ""}`} onClick={() => setView("settings")} type="button"><Settings size={18} /><span>Configurações</span></button><button className="profile-row profile-button" onClick={signOut} type="button"><div className="avatar">{initials}</div><div><strong>{ownerName}</strong><span>Proprietário</span></div><LogOut size={17} className="profile-action" /></button></aside>
+    <main className="main-content"><header className="topbar"><div><span className="eyebrow">CENTRAL DE CONTROLE</span><h1>{viewTitles[view]}</h1></div><div className="topbar-actions"><span className="live-dot"><i /> Supabase conectado</span><button className="icon-button" onClick={loadDashboardData} aria-label="Atualizar dados" type="button"><RefreshCw size={19} /></button></div></header><div className="content-wrap">{dashboardError && <div className="dashboard-error"><X size={16} />{dashboardError}</div>}
+      {view === "overview" && <Overview metrics={metrics} organizations={organizations} ownerName={ownerName} navigate={setView} />}
+      {view === "qrcodes" && <QrView organizations={organizations} codes={codes} referenceInput={referenceInput} setReferenceInput={setReferenceInput} quantity={quantity} setQuantity={setQuantity} organizationId={organizationId} setOrganizationId={setOrganizationId} filter={qrFilter} setFilter={setQrFilter} error={formError} generate={generateCodes} download={downloadCode} remove={deleteCode} />}
+      {view === "organizations" && <OrganizationsView organizations={organizations} query={query} setQuery={setQuery} />}{view === "users" && <UsersView users={users} query={query} setQuery={setQuery} />}{view === "settings" && <SettingsView session={session} metrics={metrics} />}
+      <footer className="footer-note"><span><span className="status-pip" /> Fixar Admin <b>v1.1</b></span><span>{loading ? "Atualizando dados..." : "Dados sincronizados"} · <button className="footer-action" onClick={loadDashboardData}>Atualizar</button></span></footer>
+    </div></main></div>;
 }
 
-function MetricCard({ label, value, detail, icon: Icon, tone }: { label: string; value: string; detail: string; icon: typeof Users; tone: string }) {
-  return <article className="metric-card"><div className={`metric-icon ${tone}`}><Icon size={19} /></div><div className="metric-label">{label}</div><strong>{value}</strong><span>{detail}</span></article>;
-}
+function Overview({ metrics, organizations, ownerName, navigate }: { metrics: Metrics | null; organizations: Organization[]; ownerName: string; navigate: (view: View) => void }) { return <><section className="welcome-row"><div><h2>Bom dia, {ownerName.split(/\s+/)[0]}.</h2><p>Acompanhe empresas, usuários e identificações emitidas pelo Fixar.</p></div><div className="date-chip">{new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date()).toUpperCase()}</div></section><section className="metric-grid"><MetricCard label="Usuários cadastrados" value={String(metrics?.users ?? "…")} detail="Contas no Auth" icon={Users} tone="green" onClick={() => navigate("users")} /><MetricCard label="Organizações" value={String(metrics?.organizations ?? "…")} detail={`${metrics?.customers ?? "…"} clientes cadastrados`} icon={Boxes} tone="blue" onClick={() => navigate("organizations")} /><MetricCard label="QR Codes" value={String(metrics?.qr_codes ?? "…")} detail="Identificações emitidas" icon={QrCode} tone="amber" onClick={() => navigate("qrcodes")} /><MetricCard label="Ordens de serviço" value={String(metrics?.work_orders ?? "…")} detail={`${metrics?.assets ?? "…"} equipamentos ativos`} icon={Activity} tone="red" onClick={() => navigate("organizations")} /></section><section className="panel section-panel"><div className="panel-heading"><div><span className="section-kicker"><Boxes size={15} /> OPERAÇÃO POR EMPRESA</span><h3>Organizações em atividade</h3><p>Clientes, equipamentos e ordens consolidados em tempo real.</p></div><button className="secondary-button" onClick={() => navigate("organizations")}>Ver todas</button></div><OrganizationTable organizations={organizations.slice(0, 5)} /></section></>; }
 
-function LoginScreen({ error, onSubmit }: { error: string; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
-  return <div className="auth-screen"><div className="auth-box"><div className="brand-mark"><WrenchMark /></div><span className="eyebrow">FIXAR ADMIN</span><h1>Acesso do proprietário</h1><p>Entre para acompanhar a operação global do Fixar.</p><form onSubmit={onSubmit}><label>E-mail<input name="email" type="email" autoComplete="email" placeholder="seu@email.com" required /></label><label>Senha<input name="password" type="password" autoComplete="current-password" placeholder="Sua senha" required /></label>{error && <div className="form-error"><X size={15} />{error}</div>}<button className="primary-button" type="submit">Entrar no painel</button></form></div></div>;
-}
+function QrView(props: { organizations: Organization[]; codes: StoredQr[]; referenceInput: string; setReferenceInput: (v: string) => void; quantity: number; setQuantity: (v: number) => void; organizationId: string; setOrganizationId: (v: string) => void; filter: string; setFilter: (v: string) => void; error: string; generate: () => void; download: (c: StoredQr) => void; remove: (c: StoredQr) => void }) { const filtered = props.codes.filter((c) => !props.filter || c.organization_id === props.filter); let preview = ""; try { preview = props.referenceInput && props.quantity > 1 ? createReferenceSequence(props.referenceInput, props.quantity).at(-1) || "" : ""; } catch {} return <><section className="primary-grid"><div className="panel qr-panel"><div className="panel-heading"><div><span className="section-kicker"><QrCode size={15} /> NOVA IDENTIFICAÇÃO</span><h3>Gerar QR Codes</h3><p>Informe uma referência numérica final para criar uma sequência.</p></div></div><div className="generator-form"><label>Empresa<select value={props.organizationId} onChange={(e) => props.setOrganizationId(e.target.value)}><option value="">Selecione</option>{props.organizations.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}</select></label><label>Referência inicial <span>opcional</span><input value={props.referenceInput} onChange={(e) => props.setReferenceInput(e.target.value.toUpperCase())} placeholder="Ex.: SC-0600" maxLength={7} /></label><label className="quantity-label">Quantidade <div className="stepper"><button disabled={props.quantity <= 1} onClick={() => props.setQuantity(Math.max(1, props.quantity - 1))}>−</button><strong>{props.quantity}</strong><button disabled={props.quantity >= 24} onClick={() => props.setQuantity(Math.min(24, props.quantity + 1))}>+</button></div></label>{preview && <div className="sequence-preview">Sequência: {props.referenceInput} até {preview}</div>}{props.error && <div className="form-error"><X size={15} />{props.error}</div>}<button className="primary-button" onClick={props.generate}><Plus size={18} />Gerar {props.quantity} QR Code{props.quantity > 1 ? "s" : ""}</button></div></div><div className="panel insight-panel"><span className="section-kicker"><ShieldCheck size={15} /> CONTROLE</span><h3>{props.codes.length} códigos persistidos.</h3><p>Cada QR fica associado à empresa selecionada e pode ser filtrado, baixado ou excluído.</p></div></section><section className="panel section-panel"><div className="panel-heading"><div><h3>QR Codes cadastrados</h3><p>{filtered.length} resultado{filtered.length !== 1 ? "s" : ""}.</p></div><select className="compact-select" value={props.filter} onChange={(e) => props.setFilter(e.target.value)}><option value="">Todas as empresas</option>{props.organizations.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}</select></div>{filtered.length ? <div className="code-grid">{filtered.map((code) => <article className="code-card" key={code.id}><div className="code-image-wrap"><img src={code.dataUrl} alt={`QR Code ${code.reference}`} /></div><div className="code-card-footer"><div><span>{code.organization_name || "SEM EMPRESA"}</span><strong>{code.reference}</strong></div><div className="row-actions"><button className="download-button" onClick={() => props.download(code)} aria-label="Baixar"><Download size={16} /></button><button className="download-button danger" onClick={() => props.remove(code)} aria-label="Excluir"><Trash2 size={16} /></button></div></div></article>)}</div> : <EmptyState text="Nenhum QR Code encontrado para este filtro." />}</section></>; }
 
-function formatBytes(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function WrenchMark() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4.3 4.3 0 0 0-5.5 5.5L4.4 16.6a2.1 2.1 0 1 0 3 3l4.8-4.8a4.3 4.3 0 0 0 5.5-5.5l-2.8 2.8-2.7-.7-.7-2.7 2.8-2.4Z" /></svg>;
-}
-
-function App() {
-  const match = window.location.pathname.match(/^\/e\/([^/]+)\/?$/i);
-  return match ? <PublicEquipmentPage token={match[1]} /> : <AdminApp />;
-}
-
+function OrganizationsView({ organizations, query, setQuery }: { organizations: Organization[]; query: string; setQuery: (v: string) => void }) { const rows = organizations.filter((o) => o.name.toLowerCase().includes(query.toLowerCase())); return <section className="panel section-panel"><ListHeader title="Empresas cadastradas" subtitle={`${rows.length} organizações ativas`} query={query} setQuery={setQuery} /><OrganizationTable organizations={rows} /></section>; }
+function OrganizationTable({ organizations }: { organizations: Organization[] }) { return organizations.length ? <div className="data-list">{organizations.map((o) => <article className="data-row" key={o.id}><div className="org-avatar">{o.name.slice(0, 2).toUpperCase()}</div><div className="data-primary"><strong>{o.name}</strong><span>{o.email || o.phone || "Contato não informado"}</span></div><Stat label="Clientes" value={o.customers} /><Stat label="Equipamentos" value={o.assets} /><Stat label="Ordens" value={o.work_orders} /><Stat label="Membros" value={o.members} /><Stat label="QR Codes" value={o.qr_codes} /></article>)}</div> : <EmptyState text="Nenhuma organização encontrada." />; }
+function UsersView({ users, query, setQuery }: { users: AdminUser[]; query: string; setQuery: (v: string) => void }) { const rows = users.filter((u) => `${u.display_name} ${u.email}`.toLowerCase().includes(query.toLowerCase())); return <section className="panel section-panel"><ListHeader title="Usuários cadastrados" subtitle={`${rows.length} contas no Supabase Auth`} query={query} setQuery={setQuery} /><div className="data-list">{rows.map((u) => <article className="data-row user-row" key={u.id}><div className="org-avatar">{(u.display_name || u.email).slice(0, 2).toUpperCase()}</div><div className="data-primary"><strong>{u.display_name || "Nome não informado"}</strong><span>{u.email}</span></div><Stat label="Organizações" value={u.organizations} /><div className="date-stat"><small>Último acesso</small><strong>{u.last_sign_in_at ? formatDate(u.last_sign_in_at) : "Nunca"}</strong></div></article>)}</div></section>; }
+function SettingsView({ session, metrics }: { session: Session; metrics: Metrics | null }) { return <section className="settings-grid"><div className="panel"><span className="section-kicker"><Settings size={15} /> AMBIENTE</span><h3>Configuração do painel</h3><dl className="settings-list"><div><dt>Domínio público</dt><dd>fixar.systechsolucoes.com.br</dd></div><div><dt>Supabase</dt><dd>Conectado</dd></div><div><dt>Conta administrativa</dt><dd>{session.user.email}</dd></div></dl></div><div className="panel"><span className="section-kicker"><Database size={15} /> ARMAZENAMENTO</span><h3>{metrics ? formatBytes(metrics.storage_bytes) : "…"}</h3><p>{metrics?.storage_files ?? "…"} arquivos registrados no Storage.</p></div></section>; }
+function ListHeader({ title, subtitle, query, setQuery }: { title: string; subtitle: string; query: string; setQuery: (v: string) => void }) { return <div className="list-header"><div><h3>{title}</h3><p>{subtitle}</p></div><label className="web-search"><Search size={17} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar" /></label></div>; }
+function Stat({ label, value }: { label: string; value: number }) { return <div className="row-stat"><small>{label}</small><strong>{value}</strong></div>; } function EmptyState({ text }: { text: string }) { return <div className="empty-state"><QrCode size={26} /><p>{text}</p></div>; }
+function MetricCard({ label, value, detail, icon: Icon, tone, onClick }: { label: string; value: string; detail: string; icon: typeof Users; tone: string; onClick: () => void }) { return <button className="metric-card metric-button" onClick={onClick}><div className={`metric-icon ${tone}`}><Icon size={19} /></div><div className="metric-label">{label}</div><strong>{value}</strong><span>{detail}</span></button>; }
+function LoadingScreen() { return <div className="auth-screen"><div className="auth-box"><div className="brand-mark"><WrenchMark /></div><span className="eyebrow">FIXAR ADMIN</span><h1>Carregando painel</h1><p>Validando seu acesso seguro.</p></div></div>; }
+function LoginScreen({ error, onSubmit }: { error: string; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) { return <div className="auth-screen"><div className="auth-box"><div className="brand-mark"><WrenchMark /></div><span className="eyebrow">FIXAR ADMIN</span><h1>Acesso do proprietário</h1><p>Entre para acompanhar a operação global do Fixar.</p><form onSubmit={onSubmit}><label>E-mail<input name="email" type="email" autoComplete="email" required /></label><label>Senha<input name="password" type="password" autoComplete="current-password" required /></label>{error && <div className="form-error"><X size={15} />{error}</div>}<button className="primary-button">Entrar no painel</button></form></div></div>; }
+const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR").format(new Date(value)); function formatBytes(bytes: number) { if (bytes < 1024) return `${bytes} B`; if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`; return `${(bytes / 1048576).toFixed(1)} MB`; }
+function WrenchMark() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4.3 4.3 0 0 0-5.5 5.5L4.4 16.6a2.1 2.1 0 1 0 3 3l4.8-4.8a4.3 4.3 0 0 0 5.5-5.5l-2.8 2.8-2.7-.7-.7-2.7 2.8-2.4Z" /></svg>; }
+function App() { const match = window.location.pathname.match(/^\/e\/([^/]+)\/?$/i); return match ? <PublicEquipmentPage token={match[1]} /> : <AdminApp />; }
 export default App;

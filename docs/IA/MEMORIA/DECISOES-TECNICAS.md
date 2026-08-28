@@ -25,3 +25,9 @@ Detalhamento e modelo inicial: `docs/ARQUITETURA-SAAS.md`.
 - O QR público usa uma tabela de vínculo separada, token UUID aleatório estável e consulta desativada por padrão; o UUID interno do equipamento não aparece na URL.
 - A leitura anônima ocorre somente pela RPC minimizada `get_public_equipment`; tabelas de equipamento, ordens e vínculos não recebem leitura anônima ampla.
 - O QR público por URL permanece separado do QR interno de referência. Uma futura transferência autorizada poderá reposicionar o vínculo preservando o token, sem deduplicação ou transferência nesta V1.
+
+## 2026-08-28 — Administração global por RPC minimizada
+
+- O dashboard global não recebe leitura ampla das tabelas multiempresa. Organizações, usuários e QR Codes são expostos por RPCs específicas que validam `private.is_platform_admin()`.
+- QR Codes internos gerados pelo painel podem ser associados a uma organização para filtro e inventário administrativo; registros legados permanecem válidos sem associação.
+- Sequências incrementam apenas o sufixo numérico, preservando prefixo e largura, como `SC-0600` até `SC-0603`.
