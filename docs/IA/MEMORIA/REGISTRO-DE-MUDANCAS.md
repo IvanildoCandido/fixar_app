@@ -10,6 +10,7 @@ Este registro complementa, mas não substitui, o histórico Git.
 - Typecheck nativo/web, 15 testes, build Vite e `git diff --check` foram aprovados. As migrations foram aplicadas e validadas no Supabase de desenvolvimento com rollback dos dados de teste.
 - Adicionada configuração versionada da Vercel para publicar dashboard e ficha pública no mesmo SPA, com build do monorepo, rewrite de `/e/:token`, cache de assets e headers defensivos.
 - A configuração passou a aceitar também projetos Vercel com Root Directory em `apps/admin-web`, incluindo manifesto local e alias compatível com o comando observado no primeiro build remoto.
+- O pacote TypeScript compartilhado `packages/qr-contract` recebeu `tsconfig` independente, evitando que builds web focados tentem resolver a configuração Expo da raiz.
 
 ## 2026-08-28 — Offline simples para manutenção individual
 
