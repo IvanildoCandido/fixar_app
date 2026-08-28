@@ -7,15 +7,19 @@ O mesmo projeto Vercel publica:
 
 ## Configuração do projeto
 
-Importe a raiz deste repositório na Vercel. O arquivo `vercel.json` já define:
+O repositório aceita as duas configurações de **Root Directory**:
+
+- raiz do repositório, usando `/vercel.json`;
+- `apps/admin-web`, usando `/apps/admin-web/vercel.json`.
+
+Para o projeto Vercel atualmente criado, mantenha **Root Directory** como `apps/admin-web`. O arquivo local já define:
 
 - framework `Vite`;
-- instalação com `npm ci`;
-- build com `npm run admin:build`;
-- saída em `apps/admin-web/dist`;
+- build com `npm run build`;
+- saída em `dist`;
 - rewrite de `/e/:token` para o SPA.
 
-Não altere o **Root Directory** para `apps/admin-web`; ele deve permanecer na raiz do repositório para que os workspaces npm e `packages/qr-contract` estejam disponíveis.
+Se houver overrides antigos em **Settings > Build and Deployment**, desative-os para que a Vercel use `apps/admin-web/vercel.json`. O alias `npm run admin:build` também foi mantido no workspace para tolerar o comando observado no primeiro deploy.
 
 ## Variáveis
 

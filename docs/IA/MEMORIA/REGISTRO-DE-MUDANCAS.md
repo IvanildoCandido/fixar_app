@@ -9,6 +9,7 @@ Este registro complementa, mas não substitui, o histórico Git.
 - O painel web ganhou rota `/e/:token`, ficha mobile-first, histórico resumido, próxima manutenção e WhatsApp opcional, com `noindex` e resposta genérica de indisponibilidade.
 - Typecheck nativo/web, 15 testes, build Vite e `git diff --check` foram aprovados. As migrations foram aplicadas e validadas no Supabase de desenvolvimento com rollback dos dados de teste.
 - Adicionada configuração versionada da Vercel para publicar dashboard e ficha pública no mesmo SPA, com build do monorepo, rewrite de `/e/:token`, cache de assets e headers defensivos.
+- A configuração passou a aceitar também projetos Vercel com Root Directory em `apps/admin-web`, incluindo manifesto local e alias compatível com o comando observado no primeiro build remoto.
 
 ## 2026-08-28 — Offline simples para manutenção individual
 

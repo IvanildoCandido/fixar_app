@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "admin:build": "npm run build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
