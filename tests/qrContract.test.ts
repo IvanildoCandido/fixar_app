@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createEquipmentQrPayload, extractEquipmentReference, extractFixarEquipmentToken, normalizeEquipmentReference } from "@fixar/qr-contract";
+import { createEquipmentPublicUrl, createEquipmentQrPayload, extractEquipmentReference, extractFixarEquipmentToken, normalizeEquipmentReference } from "@fixar/qr-contract";
 
 test("preserva referências de equipamento com hífen", () => {
   assert.equal(normalizeEquipmentReference("sc-0400"), "SC-0400");
@@ -17,4 +17,10 @@ test("extrai token somente da URL oficial de equipamento", () => {
   assert.equal(extractFixarEquipmentToken(`https://fixar.systechsolucoes.com.br/e/${token}`, "https://fixar.systechsolucoes.com.br"), token);
   assert.equal(extractFixarEquipmentToken(`https://outro.example/e/${token}`, "https://fixar.systechsolucoes.com.br"), null);
   assert.equal(extractFixarEquipmentToken("SC-0400", "https://fixar.systechsolucoes.com.br"), null);
+});
+
+test("cria sempre a rota pública HTTPS do equipamento", () => {
+  const token = "123e4567-e89b-42d3-a456-426614174000";
+  assert.equal(createEquipmentPublicUrl("https://fixar.systechsolucoes.com.br/", token), `https://fixar.systechsolucoes.com.br/e/${token}`);
+  assert.throws(() => createEquipmentPublicUrl("http://fixar.systechsolucoes.com.br", token), /HTTPS/);
 });

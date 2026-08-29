@@ -1,6 +1,6 @@
 # Próximas tarefas
 
-**Atualizado em:** `2026-08-28`
+**Atualizado em:** `2026-08-29`
 
 ## Objetivo confirmado
 
@@ -8,7 +8,7 @@ Evoluir o Fixar para um produto multiempresa e multiusuário, com possibilidade 
 
 ## Sequência proposta
 
-1. Publicar o app e dashboard atualizados e validar o mesmo QR na câmera comum e no scanner FIXAR em aparelho físico, incluindo OFF/ON e tentativa cross-tenant.
+1. Publicar o app e dashboard atualizados e validar o mesmo QR público na câmera comum e no scanner FIXAR em aparelho físico, incluindo tentativa cross-tenant.
 2. Validar offline em aparelho físico: recuperação após encerramento, assinaturas, edição/exclusão local, logout entre usuários, resposta perdida, sincronização manual/automática e PDF local.
 3. Testar login, geração, persistência e recarga de QR Code no `apps/admin-web` com a conta global.
 4. Implementar API administrativa para métricas de banda e demais limites que não são expostos pelo cliente público.

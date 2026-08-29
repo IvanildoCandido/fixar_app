@@ -193,17 +193,17 @@ export async function getRepairDetail(id: string): Promise<Repair> {
   });
 }
 
-export type EquipmentPublicLink = { publicToken: string; enabled: boolean };
-export async function manageEquipmentPublicLink(assetId: string, enabled?: boolean, rotateToken = false): Promise<EquipmentPublicLink> {
+export type EquipmentPublicLink = { publicToken: string };
+export async function getEquipmentQrIdentity(assetId: string): Promise<EquipmentPublicLink> {
   const { data, error } = await supabase.rpc("manage_equipment_public_link", {
     target_asset_id: assetId,
-    next_enabled: enabled ?? null,
-    rotate_token: rotateToken,
+    next_enabled: true,
+    rotate_token: false,
   });
   if (error) throw error;
   const link = data?.[0];
   if (!link) throw new Error("Não foi possível gerar o QR Code público.");
-  return { publicToken: link.public_token, enabled: link.enabled };
+  return { publicToken: link.public_token };
 }
 
 export async function resolveEquipmentQr(token: string): Promise<string> {

@@ -28,7 +28,7 @@ export function PublicEquipmentPage({ token }: { token: string }) {
   }, [token]);
 
   if (loading) return <main className="public-state"><span className="public-spinner" /><p>Carregando ficha do equipamento...</p></main>;
-  if (!data) return <main className="public-state"><ShieldCheck size={38} /><h1>Consulta pública indisponível</h1><p>Este QR Code não está ativo ou não pode mais ser consultado.</p></main>;
+  if (!data) return <main className="public-state"><ShieldCheck size={38} /><h1>Equipamento não encontrado</h1><p>Confira se este é um QR Code válido do FIXAR.</p></main>;
 
   const { organization, equipment } = data;
   const logoUrl = organization.logo_path ? supabase.storage.from("organization-logos").getPublicUrl(organization.logo_path).data.publicUrl : null;

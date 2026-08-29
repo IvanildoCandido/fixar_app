@@ -2,6 +2,10 @@
 
 Este registro complementa, mas não substitui, o histórico Git.
 
+## 2026-08-29 — QR de equipamento sempre público
+
+- Corrigido o contrato do QR de equipamento: todos os QRs existentes e novos são públicos sem ativação manual, o código contém sempre a URL HTTPS oficial e a interface deixou de oferecer rotação ou um segundo QR. Migration remota aplicada; TypeScript, build Vite e 20 testes passaram.
+
 ## 2026-08-28 — QR Code público de equipamentos
 
 - Criado vínculo multiempresa com token não enumerável, desativado por padrão, revogável e rotacionável, sem liberar leitura anônima das tabelas de negócio.

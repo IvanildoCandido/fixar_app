@@ -35,6 +35,16 @@ export function extractFixarEquipmentToken(data: string, publicBaseUrl: string):
   }
 }
 
+export function createEquipmentPublicUrl(publicBaseUrl: string, token: string): string {
+  const baseUrl = new URL(publicBaseUrl);
+  if (baseUrl.protocol !== "https:") throw new Error("A URL pública deve usar HTTPS.");
+  if (!/^[0-9a-f-]{36}$/i.test(token)) throw new Error("Token de equipamento inválido.");
+  baseUrl.pathname = `/e/${token}`;
+  baseUrl.search = "";
+  baseUrl.hash = "";
+  return baseUrl.toString().replace(/\/$/, "");
+}
+
 export function createEquipmentReference(randomValues?: Uint32Array): string {
   const values = randomValues ?? crypto.getRandomValues(new Uint32Array(REFERENCE_LENGTH));
   return Array.from({ length: REFERENCE_LENGTH }, (_, index) => (

@@ -1,44 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { Alert, Share, Switch } from "react-native";
+import { Alert, Share } from "react-native";
 import * as Print from "expo-print";
 import QRCode from "qrcode";
 import { SvgXml } from "react-native-svg";
 import styled, { useTheme } from "styled-components/native";
 import { Button, FormModal, Spinner } from "../../design-system";
 import { DeviceProps } from "../../screens/Devices";
-import { manageEquipmentPublicLink } from "../../services/API";
+import { getEquipmentQrIdentity } from "../../services/API";
+import { createEquipmentPublicUrl } from "@fixar/qr-contract";
 
 export function EquipmentQr({ device, onClose }: { device: DeviceProps; onClose: () => void }) {
   const theme = useTheme();
   const [token, setToken] = useState("");
-  const [enabled, setEnabled] = useState(false);
   const [svg, setSvg] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const baseUrl = process.env.EXPO_PUBLIC_FIXAR_WEB_URL?.replace(/\/$/, "");
-  const url = baseUrl && token ? `${baseUrl}/e/${token}` : "";
+  const url = baseUrl && token ? createEquipmentPublicUrl(baseUrl, token) : "";
 
   async function load() {
     try {
-      const link = await manageEquipmentPublicLink(device.id);
-      setToken(link.publicToken); setEnabled(link.enabled);
+      const link = await getEquipmentQrIdentity(device.id);
+      setToken(link.publicToken);
     } catch { Alert.alert("QR Code do equipamento", "Não foi possível carregar esta configuração."); }
     finally { setLoading(false); }
   }
   useEffect(() => { void load(); }, [device.id]);
   useEffect(() => { if (url) void QRCode.toString(url, { type: "svg", width: 260, margin: 2, color: { dark: theme.colors.foreground, light: "#ffffff" } }).then(setSvg); }, [url, theme.colors.foreground]);
 
-  async function toggle(value: boolean) {
-    setSaving(true);
-    try { const link = await manageEquipmentPublicLink(device.id, value); setEnabled(link.enabled); }
-    catch { Alert.alert("QR Code do equipamento", "Não foi possível alterar a consulta pública."); }
-    finally { setSaving(false); }
-  }
-  function rotate() {
-    Alert.alert("Invalidar QR atual?", "ATENÇÃO: o QR Code colado no equipamento deixará de funcionar. Será necessário imprimir e substituir a etiqueta física.", [{ text: "Cancelar", style: "cancel" }, { text: "Invalidar e substituir", style: "destructive", onPress: async () => {
-      setSaving(true); try { const link = await manageEquipmentPublicLink(device.id, undefined, true); setToken(link.publicToken); } catch { Alert.alert("QR Code do equipamento", "Não foi possível invalidar o código atual."); } finally { setSaving(false); }
-    } }]);
-  }
   async function print() {
     if (!svg) return;
     await Print.printAsync({ html: `<html><body style="font-family:Arial;text-align:center;padding:40px"><h1>${device.reference}</h1><p>${device.brand} ${device.model} • ${device.location}</p>${svg}<p>${url}</p></body></html>` });
@@ -48,12 +36,10 @@ export function EquipmentQr({ device, onClose }: { device: DeviceProps; onClose:
     {loading ? <Spinner /> : !baseUrl ? <Notice>Configure EXPO_PUBLIC_FIXAR_WEB_URL para gerar o endereço público.</Notice> : <Content>
       <Identity>{device.reference}</Identity><Meta>{[device.brand, device.model, device.location].filter(Boolean).join(" • ")}</Meta>
       {svg ? <QrFrame><SvgXml xml={svg} width={240} height={240} /></QrFrame> : null}
-      <Setting><SettingCopy><SettingTitle>Consulta pública</SettingTitle><Meta>{enabled ? "Cliente pode consultar pela câmera do celular" : "Desativada; identificação interna continua funcionando"}</Meta></SettingCopy><Switch accessibilityLabel="Ativar consulta pública" value={enabled} disabled={saving} onValueChange={toggle} trackColor={{ false: theme.colors.border, true: theme.colors.primary }} /></Setting>
-      <Notice>Quando ativada, seu cliente poderá escanear este mesmo QR com a câmera do celular para consultar o histórico do equipamento.</Notice>
+      <Setting><SettingCopy><SettingTitle>Uma etiqueta, dois usos</SettingTitle><Meta>A câmera abre a ficha pública; o scanner do FIXAR identifica este equipamento.</Meta></SettingCopy></Setting>
+      <Notice>Este QR já é público e permanente. Imprima esta etiqueta e use a mesma identificação no equipamento.</Notice>
       <Url selectable>{url}</Url>
       <ActionRow><ActionButton label="Imprimir etiqueta" variant="secondary" onPress={print} /></ActionRow>
-      <AdvancedTitle>Opção avançada de segurança</AdvancedTitle>
-      <Button label="Invalidar QR atual" variant="destructive" loading={saving} onPress={rotate} />
     </Content>}
   </FormModal>;
 }
@@ -70,4 +56,3 @@ const ActionRow = styled.View`flex-direction: row; gap: ${({ theme }) => theme.s
 const ActionButton = styled(Button)`flex: 1;`;
 const FooterButton = styled(Button)`flex: 1;`;
 const Notice = styled.Text`font-family: ${({ theme }) => theme.fonts.regular}; font-size: ${({ theme }) => theme.typography.caption.size}px; line-height: ${({ theme }) => theme.typography.caption.lineHeight}px; color: ${({ theme }) => theme.colors.muted};`;
-const AdvancedTitle = styled.Text`margin-top: ${({ theme }) => theme.spacing.md}px; font-family: ${({ theme }) => theme.fonts.medium}; font-size: ${({ theme }) => theme.typography.caption.size}px; color: ${({ theme }) => theme.colors.danger};`;

@@ -1,6 +1,6 @@
 # Estado atual
 
-**Snapshot observado:** `2026-08-28`
+**Snapshot observado:** `2026-08-29`
 **Branch observada:** `main`  
 **Commit-base observado:** `189b5b8`
 
@@ -58,8 +58,8 @@ Este documento descreve o worktree observado, não produção.
 - Revisão corretiva do painel web concluída: o manifesto raiz voltou a ter uma única lista de dependências, falhas de carregamento agora têm feedback visual, e a identidade exibida é derivada da sessão autenticada.
 - Offline simples de manutenções implementado no worktree: rascunhos e conclusões pendentes são persistidos no dispositivo por usuário/organização, restaurados no formulário, exibidos no histórico/Home e reenviados manualmente ou ao abrir/retomar o app. A migration `20260828120000_offline_maintenance_idempotency.sql` foi aplicada e validada no Supabase de desenvolvimento com idempotência, atomicidade, filhos completos e negação sem associação.
 - QR público de equipamentos implementado e aplicado ao Supabase de desenvolvimento: técnicos podem criar, ativar, compartilhar, imprimir e rotacionar uma URL pública; `apps/admin-web` serve uma ficha mobile-first sem login com dados minimizados, histórico da mesma organização e contato opcional. Teste remoto com rollback confirmou revogação, rotação, remoção lógica e negação entre organizações.
-- QR de equipamento unificado e aplicado: a mesma URL identifica internamente o equipamento e abre a ficha pública; `enabled` afeta somente a ficha pública, o scanner mantém compatibilidade com referências legadas e a interface não oferece QR público separado. O backfill remoto confirmou 156 identidades para 156 equipamentos ativos.
-- Supabase CLI autenticado e vinculado ao projeto de desenvolvimento; histórico de migrations MCP/CLI reconciliado com os nomes versionados locais, sem migrations pendentes após `20260828210000_unify_equipment_qr_identity.sql`.
+- QR de equipamento unificado e público por definição: a mesma URL HTTPS identifica internamente o equipamento e abre a ficha pública, sem ativação manual ou rotação disponível na interface. A migration `20260829090000_make_equipment_qr_always_public.sql` tornou públicos os registros existentes, alterou o padrão para novos equipamentos e removeu o bloqueio legado `enabled` da consulta pública; o scanner mantém compatibilidade com referências antigas.
+- Supabase CLI autenticado e vinculado ao projeto de desenvolvimento; histórico de migrations MCP/CLI reconciliado com os nomes versionados locais, sem migrations pendentes após `20260829090000_make_equipment_qr_always_public.sql`.
 - Domínio público dos QRs configurado como `https://fixar.systechsolucoes.com.br` por meio de `EXPO_PUBLIC_FIXAR_WEB_URL`.
 - Publicação Vercel preparada na raiz do monorepo: `vercel.json` compila `apps/admin-web`, publica o dashboard em `/`, preserva a ficha pública em `/e/:token` por rewrite SPA e adiciona headers básicos; checklist em `docs/DEPLOY-VERCEL.md`.
 - Dashboard publicado em `fixar.systechsolucoes.com.br`; a migration de correção do grant de `private.is_platform_admin()` foi aplicada e validada como `authenticated`, eliminando o `403` da policy de `generated_qr_codes` observado em produção.
