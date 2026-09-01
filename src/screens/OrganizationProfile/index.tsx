@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import { Building2 } from "lucide-react-native";
 import { useTheme } from "styled-components/native";
 import { Header } from "../../components/Header";
@@ -8,9 +9,16 @@ import { Button, FormField } from "../../design-system";
 import { useAuth } from "../../auth/AuthContext";
 import { supabase } from "../../services/supabase";
 import { invalidateQueries } from "../../services/queryCache";
-import { Actions, Container, Content, Help, LogoCard, LogoPlaceholder, LogoPreview } from "./styles";
+import { Actions, Container, Content, LogoCard, LogoPlaceholder, LogoPreview } from "./styles";
+import {
+  ORGANIZATION_LOGO_MAX_BYTES,
+  ORGANIZATION_LOGO_MAX_DIMENSION,
+  ORGANIZATION_LOGO_WEBP_QUALITY,
+  organizationLogoOutput,
+} from "../../domain/organizationLogo";
 
 type Fields = { name: string; legal_name: string; document: string; email: string; phone: string; address: string };
+type OptimizedLogo = { uri: string; contentType: "image/png" | "image/webp"; extension: "png" | "webp" };
 
 export function OrganizationProfile() {
   const { session, refreshSession } = useAuth();
@@ -22,7 +30,8 @@ export function OrganizationProfile() {
   });
   const [logoUri, setLogoUri] = useState<string | null>(null);
   const [logoPath, setLogoPath] = useState<string | null>(null);
-  const [logoAsset, setLogoAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [logoAsset, setLogoAsset] = useState<OptimizedLogo | null>(null);
+  const [optimizingLogo, setOptimizingLogo] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -42,8 +51,40 @@ export function OrganizationProfile() {
       Alert.alert("Acesso necessário", "Permita o acesso às fotos para selecionar a logomarca.");
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [16, 9], quality: 0.85 });
-    if (!result.canceled) { setLogoAsset(result.assets[0]); setLogoUri(result.assets[0].uri); }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [16, 9], quality: 1 });
+    if (result.canceled) return;
+
+    try {
+      setOptimizingLogo(true);
+      const asset = result.assets[0];
+      let optimizedLogo: OptimizedLogo | null = null;
+      for (const maxDimension of [ORGANIZATION_LOGO_MAX_DIMENSION, 800, 600]) {
+        const output = organizationLogoOutput(asset.width, asset.height, asset.mimeType, maxDimension);
+        const context = ImageManipulator.ImageManipulator.manipulate(asset.uri);
+        if (output.width && output.height && (output.width !== asset.width || output.height !== asset.height)) {
+          context.resize({ width: output.width, height: output.height });
+        }
+        const rendered = await context.renderAsync();
+        const optimized = await rendered.saveAsync({
+          compress: output.preserveTransparency ? 1 : ORGANIZATION_LOGO_WEBP_QUALITY,
+          format: output.preserveTransparency ? ImageManipulator.SaveFormat.PNG : ImageManipulator.SaveFormat.WEBP,
+        });
+        const bytes = await (await fetch(optimized.uri)).arrayBuffer();
+        if (bytes.byteLength <= ORGANIZATION_LOGO_MAX_BYTES) {
+          optimizedLogo = { uri: optimized.uri, contentType: output.contentType, extension: output.extension };
+          break;
+        }
+      }
+      if (!optimizedLogo) {
+        throw new Error("A logomarca continua acima de 2 MB após a otimização. Escolha uma imagem mais simples.");
+      }
+      setLogoAsset(optimizedLogo);
+      setLogoUri(optimizedLogo.uri);
+    } catch (error) {
+      Alert.alert("Não foi possível otimizar a logomarca", error instanceof Error ? error.message : "Escolha outra imagem e tente novamente.");
+    } finally {
+      setOptimizingLogo(false);
+    }
   }
 
   async function save() {
@@ -58,11 +99,10 @@ export function OrganizationProfile() {
       invalidateQueries(`report-company:${organization.id}`);
 
       if (logoAsset) {
-        const contentType = logoAsset.mimeType ?? "image/jpeg";
-        const extension = contentType === "image/png" ? "png" : contentType === "image/webp" ? "webp" : "jpg";
-        const path = `${organization.id}/logo-${Date.now()}.${extension}`;
+        const path = `${organization.id}/logo-${Date.now()}.${logoAsset.extension}`;
         const bytes = await (await fetch(logoAsset.uri)).arrayBuffer();
-        const upload = await supabase.storage.from("organization-logos").upload(path, bytes, { contentType, upsert: false });
+        if (bytes.byteLength > ORGANIZATION_LOGO_MAX_BYTES) throw new Error("A logomarca otimizada ultrapassa o limite de 2 MB.");
+        const upload = await supabase.storage.from("organization-logos").upload(path, bytes, { contentType: logoAsset.contentType, upsert: false });
         if (upload.error) throw upload.error;
         const logoUpdate = await supabase.from("organizations").update({ logo_path: path }).eq("id", organization.id);
         if (logoUpdate.error) throw logoUpdate.error;
@@ -85,8 +125,7 @@ export function OrganizationProfile() {
   return <Container><Header title="Dados da empresa" icons /><Content keyboardShouldPersistTaps="handled">
     <LogoCard>
       {logoUri ? <LogoPreview source={{ uri: logoUri }} resizeMode="contain" /> : <LogoPlaceholder><Building2 size={34} color={theme.colors.primary} /></LogoPlaceholder>}
-      <Button label={logoUri ? "Trocar logomarca" : "Selecionar logomarca"} variant="secondary" onPress={chooseLogo} />
-      <Help>PNG, JPG ou WebP de até 2 MB. Prefira fundo transparente e formato horizontal.</Help>
+      <Button label={logoUri ? "Trocar logomarca" : "Selecionar logomarca"} variant="secondary" loading={optimizingLogo} disabled={saving} onPress={chooseLogo} />
     </LogoCard>
     <FormField label="Nome da empresa" required value={fields.name} onChangeText={set("name")} />
     <FormField label="Razão social" value={fields.legal_name} onChangeText={set("legal_name")} />

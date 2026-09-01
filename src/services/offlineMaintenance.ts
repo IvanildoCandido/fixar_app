@@ -79,6 +79,11 @@ export async function removeOfflineMaintenance(localId: string, scope: OfflineSc
   await writeAll(records.filter((item) => !(item.localId === localId && item.userId === scope.userId && item.organizationId === scope.organizationId)), storage);
 }
 
+export async function clearOfflineMaintenances(scope: OfflineScope, storage: Storage = AsyncStorage) {
+  const records = await readAll(storage);
+  await writeAll(records.filter((item) => item.userId !== scope.userId || item.organizationId !== scope.organizationId), storage);
+}
+
 export async function markOfflineMaintenance(
   localId: string, scope: OfflineScope, status: OfflineMaintenanceStatus, lastError?: string, storage: Storage = AsyncStorage
 ) {

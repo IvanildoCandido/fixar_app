@@ -60,10 +60,15 @@ export const ReminderEmpty = styled.Text`
   padding: 14px; font-family: ${({ theme }) => theme.fonts.regular};
   font-size: ${({ theme }) => theme.typography.bodySmall.size}px; color: ${({ theme }) => theme.colors.muted};
 `;
-export const PendingCard = styled.TouchableOpacity`
-  min-height: 52px; margin-bottom: 18px; padding: 12px 14px; flex-direction: row; align-items: center; gap: 10px;
+export const PendingCard = styled.View`
+  min-height: 52px; margin-bottom: 18px; padding: 6px; flex-direction: row; align-items: center;
   border-radius: ${({ theme }) => theme.radii.lg}px; border: 1px solid ${({ theme }) => theme.colors.syncPending};
   background-color: ${({ theme }) => theme.colors.card};
+`;
+export const PendingAction = styled.Pressable`min-height: 44px; flex: 1; padding: 6px 8px; flex-direction: row; align-items: center; gap: 10px;`;
+export const PendingDismiss = styled.Pressable`
+  width: 44px; height: 44px; align-items: center; justify-content: center;
+  border-radius: ${({ theme }) => theme.radii.md}px;
 `;
 export const PendingText = styled.Text`
   flex: 1; font-family: ${({ theme }) => theme.fonts.medium}; font-size: ${({ theme }) => theme.typography.bodySmall.size}px;

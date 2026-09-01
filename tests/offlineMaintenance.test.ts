@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  listOfflineMaintenances, removeOfflineMaintenance, saveOfflineMaintenance, syncOfflineMaintenance,
+  clearOfflineMaintenances, listOfflineMaintenances, removeOfflineMaintenance, saveOfflineMaintenance, syncOfflineMaintenance,
 } from "../src/services/offlineMaintenance";
 
 function memoryStorage() {
@@ -35,6 +35,16 @@ test("exclusão local não afeta registros de outro usuário", async () => {
   await saveOfflineMaintenance({ localId: "shared", ...scope, status: "pending", form }, storage as any);
   await saveOfflineMaintenance({ localId: "shared", userId: "user-b", organizationId: "org-a", status: "pending", form }, storage as any);
   await removeOfflineMaintenance("shared", scope, storage as any);
+  assert.equal((await listOfflineMaintenances(scope, storage as any)).length, 0);
+  assert.equal((await listOfflineMaintenances({ userId: "user-b", organizationId: "org-a" }, storage as any)).length, 1);
+});
+
+test("dispensa todas as manutenções somente do usuário e empresa ativos", async () => {
+  const storage = memoryStorage();
+  await saveOfflineMaintenance({ localId: "one", ...scope, status: "pending", form }, storage as any);
+  await saveOfflineMaintenance({ localId: "two", ...scope, status: "draft", form }, storage as any);
+  await saveOfflineMaintenance({ localId: "other-user", userId: "user-b", organizationId: "org-a", status: "pending", form }, storage as any);
+  await clearOfflineMaintenances(scope, storage as any);
   assert.equal((await listOfflineMaintenances(scope, storage as any)).length, 0);
   assert.equal((await listOfflineMaintenances({ userId: "user-b", organizationId: "org-a" }, storage as any)).length, 1);
 });

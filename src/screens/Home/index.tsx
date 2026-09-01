@@ -13,9 +13,9 @@ import {
   Container, Content, Greeting, Header, HeaderTop, Kicker, SectionTitle,
   SignOutButton, Subtitle,
   ReminderCard, ReminderContent, ReminderDate, ReminderEmpty, ReminderList,
-  ReminderMeta, ReminderTitle, SectionHeaderRow, SectionLink, PendingCard, PendingText, ReminderAction, ReminderDismiss,
+  ReminderMeta, ReminderTitle, SectionHeaderRow, SectionLink, PendingCard, PendingText, PendingAction, PendingDismiss, ReminderAction, ReminderDismiss,
 } from "./styles";
-import { listOfflineMaintenances } from "../../services/offlineMaintenance";
+import { clearOfflineMaintenances, listOfflineMaintenances } from "../../services/offlineMaintenance";
 
 const actions = [
   { label: "Nova ordem", Icon: ClipboardCheck, route: "Repair" },
@@ -87,6 +87,27 @@ export const Home = () => {
     );
   };
 
+  const confirmDismissPending = () => {
+    if (!session || pendingTotal === 0) return;
+    Alert.alert(
+      pendingTotal === 1 ? "Descartar manutenção salva?" : `Descartar ${pendingTotal} manutenções salvas?`,
+      pendingTotal === 1
+        ? "Ela ainda não foi enviada para a nuvem e será excluída permanentemente deste dispositivo."
+        : "Elas ainda não foram enviadas para a nuvem e serão excluídas permanentemente deste dispositivo.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Descartar", style: "destructive", onPress: async () => {
+          try {
+            await clearOfflineMaintenances({ userId: session.user.id, organizationId: session.organization.id });
+            setPendingTotal(0);
+          } catch {
+            Alert.alert("Não foi possível descartar", "Tente novamente.");
+          }
+        } },
+      ]
+    );
+  };
+
   return (
     <Container>
       <Header>
@@ -108,9 +129,14 @@ export const Home = () => {
       </Header>
 
       <Content ref={contentRef} showsVerticalScrollIndicator={false}>
-        {pendingTotal > 0 ? <PendingCard accessibilityRole="button" accessibilityLabel={`${pendingTotal} manutenções locais`} onPress={() => navigation.navigate("FinishedServices")}>
-          <CloudOff size={20} color={theme.colors.syncPending} />
-          <PendingText>{pendingTotal} {pendingTotal === 1 ? "manutenção salva" : "manutenções salvas"} neste dispositivo</PendingText>
+        {pendingTotal > 0 ? <PendingCard>
+          <PendingAction accessibilityRole="button" accessibilityLabel={`${pendingTotal} manutenções locais`} onPress={() => navigation.navigate("FinishedServices")}>
+            <CloudOff size={20} color={theme.colors.syncPending} />
+            <PendingText>{pendingTotal} {pendingTotal === 1 ? "manutenção salva" : "manutenções salvas"} neste dispositivo</PendingText>
+          </PendingAction>
+          <PendingDismiss accessibilityRole="button" accessibilityLabel="Descartar manutenções salvas neste dispositivo" onPress={confirmDismissPending}>
+            <X size={20} color={theme.colors.danger} />
+          </PendingDismiss>
         </PendingCard> : null}
         <SectionHeaderRow><SectionTitle>Próximas manutenções</SectionTitle>{remindersTotal > 5 ? <SectionLink onPress={() => navigation.navigate("MaintenanceReminders")}>Ver todas ({remindersTotal})</SectionLink> : null}</SectionHeaderRow>
         <ReminderList>

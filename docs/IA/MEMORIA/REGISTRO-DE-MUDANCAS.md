@@ -2,6 +2,17 @@
 
 Este registro complementa, mas não substitui, o histórico Git.
 
+## 2026-09-01 — Dispensa de manutenções locais
+
+- O aviso de manutenções salvas no dispositivo na Home recebeu uma ação para descartar os registros locais que o usuário não deseja mais sincronizar.
+- A remoção exige confirmação explícita, informa que os dados ainda não enviados serão excluídos permanentemente e atua somente no usuário e na organização ativos.
+
+## 2026-09-01 — Otimização de logomarcas antes do upload
+
+- O cadastro da empresa passa a redimensionar e recomprimir a logomarca localmente antes de enviá-la ao Supabase Storage.
+- O maior lado começa limitado a 1200 px; arquivos que ainda excedem 2 MB são tentados novamente em 800 e 600 px. PNG permanece PNG para preservar transparência, enquanto os demais formatos são gravados em WebP com qualidade de 82%.
+- A prévia usa o arquivo já otimizado e o limite remoto existente de 2 MB continua como segunda barreira; arquivos que ainda excedem o limite não são enviados.
+
 ## 2026-09-01 — Correção visual das etiquetas
 
 - Etiquetas passaram a usar somente duas colunas verticais: identidade da empresa (logo, nome e telefone) à esquerda e QR com referência abaixo à direita, na proporção 45/55.
