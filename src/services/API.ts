@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { Page, Repair, RepairFilters } from "../types/data";
+import { EquipmentLabelItem, EquipmentLabelPreferences, Page, Repair, RepairFilters } from "../types/data";
 import { cachedQuery, clearQueryCache, invalidateQueries } from "./queryCache";
 import type { OfflineMaintenancePayload } from "./offlineMaintenance";
 
@@ -206,6 +206,74 @@ export async function getEquipmentQrIdentity(assetId: string): Promise<Equipment
   return { publicToken: link.public_token };
 }
 
+import { DEFAULT_LABEL_HEIGHT_MM, DEFAULT_LABEL_WIDTH_MM } from "../domain/equipmentLabels";
+
+export const defaultEquipmentLabelPreferences: EquipmentLabelPreferences = {
+  widthMm: DEFAULT_LABEL_WIDTH_MM, heightMm: DEFAULT_LABEL_HEIGHT_MM, showOrganizationPhone: true,
+  showEquipmentType: false, showBrandModel: false, showLocation: false,
+};
+
+export async function listEquipmentLabelItems(): Promise<EquipmentLabelItem[]> {
+  const organizationId = requireOrganization();
+  const result = await supabase.from("assets")
+    .select("id, reference, brand, model, location, equipment_type, customer_id, Customer:customers(name), equipment_public_links(public_token)")
+    .eq("organization_id", organizationId).is("deleted_at", null).order("reference");
+  return unwrap<any[]>(result as any).map((row) => ({
+    id: row.id, assetId: row.id, reference: row.reference, brand: row.brand ?? "", model: row.model ?? "",
+    location: row.location, equipmentType: row.equipment_type ?? "", customerId: row.customer_id,
+    customerName: row.Customer?.name ?? "", publicToken: row.equipment_public_links?.[0]?.public_token ?? null,
+  }));
+}
+
+export async function listReservedEquipmentQrCodes(): Promise<EquipmentLabelItem[]> {
+  const organizationId = requireOrganization();
+  const result = await supabase.from("generated_qr_codes").select("id, reference, public_token, asset_id")
+    .eq("organization_id", organizationId).is("asset_id", null).order("created_at", { ascending: false });
+  return unwrap<any[]>(result as any).map((row) => ({ id: `reserved:${row.id}`, assetId: null, reference: row.reference,
+    brand: "", model: "", location: "Aguardando cadastro", equipmentType: "", customerId: "", customerName: "QR disponível",
+    publicToken: row.public_token }));
+}
+
+export async function reserveEquipmentQrCodes(references: string[]): Promise<EquipmentLabelItem[]> {
+  const organizationId = requireOrganization();
+  const { data, error } = await supabase.rpc("reserve_equipment_qr_codes", { target_organization_id: organizationId, requested_references: references });
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({ id: `reserved:${row.id}`, assetId: null, reference: row.reference,
+    brand: "", model: "", location: "Aguardando cadastro", equipmentType: "", customerId: "", customerName: "QR disponível",
+    publicToken: row.public_token }));
+}
+
+export async function resolveQrForRegistration(token: string): Promise<string> {
+  const { data, error } = await supabase.rpc("resolve_qr_for_registration", { token, target_organization_id: requireOrganization() });
+  if (error) throw error;
+  if (!data) throw new Error("QR Code não pertence a esta empresa.");
+  return data;
+}
+
+export async function loadEquipmentLabelPreferences(): Promise<EquipmentLabelPreferences> {
+  const organizationId = requireOrganization();
+  const { data, error } = await supabase.from("organization_label_preferences").select("*").eq("organization_id", organizationId).maybeSingle();
+  if (error) throw error;
+  if (!data) return defaultEquipmentLabelPreferences;
+  return {
+    widthMm: data.width_mm, heightMm: data.height_mm,
+    showOrganizationPhone: data.show_organization_phone,
+    showEquipmentType: data.show_equipment_type,
+    showBrandModel: data.show_brand_model, showLocation: data.show_location,
+  } as EquipmentLabelPreferences;
+}
+
+export async function saveEquipmentLabelPreferences(value: EquipmentLabelPreferences) {
+  const organizationId = requireOrganization();
+  const { error } = await supabase.from("organization_label_preferences").upsert({
+    organization_id: organizationId, width_mm: value.widthMm, height_mm: value.heightMm,
+    show_organization_phone: value.showOrganizationPhone,
+    show_equipment_type: value.showEquipmentType, show_brand_model: value.showBrandModel,
+    show_location: value.showLocation,
+  });
+  if (error) throw error;
+}
+
 export async function resolveEquipmentQr(token: string): Promise<string> {
   const organizationId = requireOrganization();
   const { data, error } = await supabase.rpc("resolve_equipment_qr", {
@@ -257,6 +325,32 @@ export async function listMaintenanceRemindersPage(page = 0, pageSize = 20, scop
   const total = result.count ?? items.length;
   return { items, total, page, pageSize, hasMore: from + items.length < total };
   });
+}
+
+export async function dismissMaintenanceReminder(workOrderId: string) {
+  const organizationId = requireOrganization();
+  const { data: authData, error: authError } = await supabase.auth.getSession();
+  if (authError) throw authError;
+  const userId = authData.session?.user.id;
+  if (!userId) throw new Error("Usuário autenticado não encontrado.");
+
+  unwrap((await supabase.from("work_orders").update({
+    reminder_enabled: false,
+    reminder_interval_days: null,
+    reminder_due_at: null,
+  }).eq("organization_id", organizationId).eq("assigned_to", userId).eq("id", workOrderId)) as any);
+  invalidateQueries(`reminders:${organizationId}`);
+}
+
+async function closePreviousMaintenanceReminders(assetId: string, currentWorkOrderId: string) {
+  const organizationId = requireOrganization();
+  unwrap((await supabase.from("work_orders").update({
+    reminder_enabled: false,
+    reminder_interval_days: null,
+    reminder_due_at: null,
+  }).eq("organization_id", organizationId).eq("asset_id", assetId)
+    .eq("reminder_enabled", true).neq("id", currentWorkOrderId)) as any);
+  invalidateQueries(`reminders:${organizationId}`);
 }
 
 async function listMaintenanceReminders() { return (await listMaintenanceRemindersPage(0, 5)).items; }
@@ -348,6 +442,7 @@ export async function createRepairIdempotent(localId: string, payload: OfflineMa
     payload: { ...payload, localId, organizationId },
   });
   if (result.error) throw result.error;
+  await closePreviousMaintenanceReminders(payload.deviceId, result.data as string);
   invalidateQueries(`repair-summaries:${organizationId}`);
   invalidateQueries(`reminders:${organizationId}`);
   return { id: result.data as string };
@@ -435,23 +530,9 @@ const API = {
       return { data: mapCustomer(unwrap<any>(result as any)) };
     }
     if (path === "/devices/add") {
-      const result = await supabase.from("assets").insert({
-        organization_id: organizationId,
-        customer_id: payload.customerId,
-        reference: payload.reference,
-        model: payload.model || null,
-        brand: payload.brand || null,
-        location: payload.location,
-        equipment_type: payload.equipmentType || null,
-        serial_number: payload.serialNumber || null,
-        capacity_btu: payload.capacityBtu || null,
-        voltage: payload.voltage || null,
-        phase: payload.phase || null,
-        refrigerant: payload.refrigerant || null,
-        installed_at: payload.installedAt || null,
-      }).select().single();
+      const result = await supabase.rpc("create_asset_with_reserved_qr", { payload: { ...payload, organizationId } });
       invalidateQueries(`devices:${organizationId}`); invalidateQueries(`customers:${organizationId}`);
-      return { data: unwrap(result as any) };
+      return { data: { id: unwrap(result as any) } };
     }
     if (path === "/parts/add" || path === "/services/add") {
       const kind = path.includes("parts") ? "part" : "service";

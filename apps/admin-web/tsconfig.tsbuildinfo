@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/publicequipmentpage.tsx","./src/main.tsx","./src/referencesequence.ts","./src/supabase.ts","./src/vite-env.d.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/publicequipmentpage.tsx","./src/main.tsx","./src/referencesequence.ts","./src/supabase.ts","./src/vite-env.d.ts","./src/whatsapp.ts"],"version":"5.9.3"}

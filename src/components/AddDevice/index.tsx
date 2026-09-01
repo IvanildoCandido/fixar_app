@@ -20,8 +20,10 @@ import { Customer, Device } from "../../types/data";
 import { defaultCustomer } from "../../utils/dafaultValues";
 import API from "../../services/API";
 import { ScannerQR } from "../ScannerQR";
-import { extractEquipmentReference } from "@fixar/qr-contract";
+import { extractEquipmentReference, extractFixarEquipmentToken } from "@fixar/qr-contract";
+import { resolveQrForRegistration } from "../../services/API";
 import { ChoiceChips, CollapsibleSection } from "../TechnicalMaintenance";
+import { brazilianDateToIso, isoDateToBrazilian, todayInBrazilianFormat } from "../../utils/brazilianDate";
 
 interface ModalProps {
   closeModal: React.Dispatch<SetStateAction<boolean>>;
@@ -45,27 +47,35 @@ const schema = Yup.object().shape({
   location: Yup.string().required(
     "Informe o local de instalação do equipamento"
   ),
+  installedAt: Yup.string().test(
+    "valid-date",
+    "Informe uma data válida no formato DD/MM/AAAA",
+    (value) => !value || Boolean(brazilianDateToIso(value))
+  ),
 });
 
 export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
   const theme = useTheme();
   const [selected, setSelected] = useState<Customer>(defaultCustomer);
   const [QRcode, setQRCode] = useState(false);
-  const [reference, setReference] = useState("");
   const [voltage, setVoltage] = useState<number | undefined>(dataEdit.voltage ?? undefined);
   const [phase, setPhase] = useState<Device["phase"]>(dataEdit.phase ?? undefined);
 
-  const handleQRcode = (data: string): void => {
-    const parsedReference = extractEquipmentReference(data);
-    setReference(parsedReference);
-    setValue("reference", parsedReference);
-    clearErrors("reference");
+  const handleQRcode = async (data: string): Promise<void> => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_FIXAR_WEB_URL ?? "";
+      const token = extractFixarEquipmentToken(data, baseUrl);
+      const parsedReference = token ? await resolveQrForRegistration(token) : extractEquipmentReference(data);
+      setValue("reference", parsedReference);
+      clearErrors("reference");
+    } catch {
+      Alert.alert("QR Code inválido", "Este QR Code não está disponível para a empresa ativa.");
+    }
   };
 
   useEffect(() => {
     if (dataEdit.Customer.id !== "") {
       setSelected(dataEdit.Customer);
-      setReference(dataEdit.reference);
     }
   }, []);
 
@@ -79,7 +89,7 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
     }
     const newDevice = {
       customerId: selected.id,
-      reference,
+      reference: form.reference.trim(),
       model: form.model,
       brand: form.brand,
       location: form.location,
@@ -89,7 +99,7 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
       voltage: voltage ?? null,
       phase: phase ?? null,
       refrigerant: form.refrigerant,
-      installedAt: form.installedAt || null,
+      installedAt: brazilianDateToIso(form.installedAt),
     };
     try {
       if (dataEdit.id !== "") {
@@ -136,7 +146,7 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
       serialNumber: dataEdit.serialNumber,
       capacityBtu: dataEdit.capacityBtu ? String(dataEdit.capacityBtu) : "",
       refrigerant: dataEdit.refrigerant,
-      installedAt: dataEdit.installedAt ?? "",
+      installedAt: dataEdit.id ? isoDateToBrazilian(dataEdit.installedAt) : todayInBrazilianFormat(),
     },
   });
   return (
@@ -144,7 +154,7 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
       <FormModal title={dataEdit.id ? "Editar equipamento" : "Novo equipamento"} description="Cadastre os dados de identificação e o local de instalação." onClose={handleButtonCancel} footer={<><Button style={{ flex: 1 }} label="Cancelar" variant="secondary" onPress={handleButtonCancel} /><Button style={{ flex: 1 }} label="Salvar" onPress={handleSubmit(handleRegister)} /></>}>
             <SelectCustomers selected={selected} setSelected={setSelected} />
             <ScanArea>
-              <ReferenceField><InputForm editable={false} control={control} name="reference" label="Referência *" placeholder="Leia ou informe o QR Code" autoCapitalize="characters" autoCorrect={false} value={reference} error={errors.reference?.message} type={"custom"} options={{ mask: "*********************************" }} /></ReferenceField>
+              <ReferenceField><InputForm control={control} name="reference" label="Código do QR Code *" placeholder="Leia ou digite o código" autoCapitalize="characters" autoCorrect={false} error={errors.reference?.message} type={"custom"} options={{ mask: "*********************************" }} /></ReferenceField>
               <ButtonScan accessibilityLabel="Ler QR Code" onPress={() => setQRCode(true)}><QrCode size={22} color={theme.colors.primary} /></ButtonScan>
             </ScanArea>
             <InputForm control={control} name="model" label="Modelo" placeholder="Ex.: Split Inverter 12.000 BTU" autoCapitalize="words" error={errors.model?.message} type={"custom"} options={{ mask: "*********************************" }} />
@@ -157,7 +167,7 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
               <ChoiceChips value={voltage ? String(voltage) : undefined} onChange={(value) => setVoltage(Number(value))} options={[{ value: "127", label: "127 V" }, { value: "220", label: "220 V" }, { value: "380", label: "380 V" }]} />
               <ChoiceChips value={phase ?? undefined} onChange={setPhase} options={[{ value: "single", label: "Monofásico" }, { value: "two", label: "Bifásico" }, { value: "three", label: "Trifásico" }, { value: "other", label: "Outro" }]} />
               <InputForm control={control} name="refrigerant" label="Refrigerante" placeholder="Ex.: R-410A" autoCapitalize="characters" type={"custom"} options={{ mask: "****************" }} />
-              <InputForm control={control} name="installedAt" label="Data de instalação" placeholder="AAAA-MM-DD" keyboardType="numbers-and-punctuation" type={"custom"} options={{ mask: "9999-99-99" }} />
+              <InputForm control={control} name="installedAt" label="Data de instalação" placeholder="DD/MM/AAAA" keyboardType="number-pad" error={errors.installedAt?.message} type={"custom"} options={{ mask: "99/99/9999" }} />
             </CollapsibleSection>
       </FormModal>
       {QRcode && <Modal visible animationType="slide"><ScannerQR closeModal={setQRCode} handleQRcode={handleQRcode} /></Modal>}

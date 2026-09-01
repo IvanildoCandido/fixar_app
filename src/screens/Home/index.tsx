@@ -1,18 +1,19 @@
-import { BarChart3, Bell, Building2, ClipboardCheck, CloudOff, FileText, LogOut, Moon, Sun, Wrench } from "lucide-react-native";
+import { BarChart3, Bell, Building2, ClipboardCheck, CloudOff, FileText, LogOut, Moon, QrCode, Sun, Wrench, X } from "lucide-react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useRef, useState } from "react";
-import { ScrollView } from "react-native";
+import { Alert, ScrollView } from "react-native";
 import { useAuth } from "../../auth/AuthContext";
 import { useFixarTheme } from "../../design-system";
 import { useTheme } from "styled-components/native";
-import { listMaintenanceRemindersPage } from "../../services/API";
+import { dismissMaintenanceReminder, listMaintenanceRemindersPage } from "../../services/API";
+import { cancelMaintenanceReminder } from "../../services/maintenanceReminders";
 import { MaintenanceReminder } from "../../types/data";
 import {
   Action, ActionIcon, ActionLabel, ActionsGrid, CompanyBadge, CompanyName,
   Container, Content, Greeting, Header, HeaderTop, Kicker, SectionTitle,
   SignOutButton, Subtitle,
   ReminderCard, ReminderContent, ReminderDate, ReminderEmpty, ReminderList,
-  ReminderMeta, ReminderTitle, SectionHeaderRow, SectionLink, PendingCard, PendingText,
+  ReminderMeta, ReminderTitle, SectionHeaderRow, SectionLink, PendingCard, PendingText, ReminderAction, ReminderDismiss,
 } from "./styles";
 import { listOfflineMaintenances } from "../../services/offlineMaintenance";
 
@@ -22,6 +23,7 @@ const actions = [
   { label: "Relatórios", Icon: BarChart3, route: "FinishedServices" },
   { label: "Orçamentos", Icon: FileText, route: "Budgets" },
   { label: "Dados da empresa", Icon: Building2, route: "OrganizationProfile" },
+  { label: "QR Codes e etiquetas", Icon: QrCode, route: "EquipmentLabels" },
 ] as const;
 
 export const Home = () => {
@@ -65,6 +67,26 @@ export const Home = () => {
     return `Em ${days} ${days === 1 ? "dia" : "dias"}`;
   };
 
+  const confirmDismissReminder = (reminder: MaintenanceReminder) => {
+    Alert.alert(
+      "Dispensar lembrete?",
+      `A próxima manutenção de ${reminder.Device.reference} deixará de aparecer.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Dispensar", style: "destructive", onPress: async () => {
+          try {
+            await dismissMaintenanceReminder(reminder.id);
+            setReminders((current) => current.filter((item) => item.id !== reminder.id));
+            setRemindersTotal((current) => Math.max(0, current - 1));
+            try { await cancelMaintenanceReminder(reminder.id); } catch { /* O lembrete persistido já foi dispensado. */ }
+          } catch {
+            Alert.alert("Não foi possível dispensar", "Verifique sua conexão e tente novamente.");
+          }
+        } },
+      ]
+    );
+  };
+
   return (
     <Container>
       <Header>
@@ -93,15 +115,18 @@ export const Home = () => {
         <SectionHeaderRow><SectionTitle>Próximas manutenções</SectionTitle>{remindersTotal > 5 ? <SectionLink onPress={() => navigation.navigate("MaintenanceReminders")}>Ver todas ({remindersTotal})</SectionLink> : null}</SectionHeaderRow>
         <ReminderList>
           {reminders.length ? reminders.slice(0, 5).map((reminder) => (
-            <ReminderCard key={reminder.id} accessibilityRole="button" accessibilityLabel={`Iniciar manutenção de ${reminder.Device.reference}`} onPress={() => navigation.navigate("Repair", { customer: reminder.Customer, device: reminder.Device })}>
-              <Bell size={20} color={new Date(reminder.dueAt).getTime() <= Date.now() ? theme.colors.warning : theme.colors.primary} />
-              <ReminderContent>
-                <ReminderTitle>{reminder.Device.reference}</ReminderTitle>
-                <ReminderMeta>{reminder.Customer.name}</ReminderMeta>
-              </ReminderContent>
-              <ReminderDate due={new Date(reminder.dueAt).getTime() <= Date.now()}>
-                {reminderDateLabel(reminder.dueAt)}
-              </ReminderDate>
+            <ReminderCard key={reminder.id}>
+              <ReminderAction accessibilityRole="button" accessibilityLabel={`Iniciar manutenção de ${reminder.Device.reference}`} onPress={() => navigation.navigate("Repair", { customer: reminder.Customer, device: reminder.Device })}>
+                <Bell size={20} color={new Date(reminder.dueAt).getTime() <= Date.now() ? theme.colors.warning : theme.colors.primary} />
+                <ReminderContent>
+                  <ReminderTitle>{reminder.Device.reference}</ReminderTitle>
+                  <ReminderMeta>{reminder.Customer.name}</ReminderMeta>
+                </ReminderContent>
+                <ReminderDate due={new Date(reminder.dueAt).getTime() <= Date.now()}>{reminderDateLabel(reminder.dueAt)}</ReminderDate>
+              </ReminderAction>
+              <ReminderDismiss accessibilityRole="button" accessibilityLabel={`Dispensar lembrete de ${reminder.Device.reference}`} onPress={() => confirmDismissReminder(reminder)}>
+                <X size={20} color={theme.colors.danger} />
+              </ReminderDismiss>
             </ReminderCard>
           )) : <ReminderEmpty>Nenhuma manutenção programada.</ReminderEmpty>}
         </ReminderList>

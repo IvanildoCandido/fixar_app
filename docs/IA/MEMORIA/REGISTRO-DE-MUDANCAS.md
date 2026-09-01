@@ -2,6 +2,43 @@
 
 Este registro complementa, mas não substitui, o histórico Git.
 
+## 2026-09-01 — Correção visual das etiquetas
+
+- Etiquetas passaram a usar somente duas colunas verticais: identidade da empresa (logo, nome e telefone) à esquerda e QR com referência abaixo à direita, na proporção 45/55.
+- Removidos do documento os dados do equipamento e do usuário gerador; prévia e PDF agora reutilizam o mesmo modelo de conteúdo.
+- Removido o contador separado de seleção; a quantidade aparece somente no botão `Gerar PDF` quando há etiquetas selecionadas.
+- Mantidos os tamanhos físicos e a paginação A4; testes, typecheck e inspeção visual de uma folha representativa foram aprovados.
+
+## 2026-08-31 — Encerramento de lembretes de manutenção
+
+- Home e listagem completa passaram a permitir dispensar um lembrete com confirmação, persistindo a desativação e removendo a notificação local correspondente quando disponível.
+- A conclusão de uma nova manutenção individual encerra lembretes anteriores do mesmo equipamento e cancela notificações locais antigas, sem remover o novo lembrete configurado na ordem atual.
+
+## 2026-08-31 — Simplificação do QR de equipamento
+
+- O modal passou a concentrar identificação, QR Code e compartilhamento; foram removidos a URL visível, textos repetidos, impressão de etiqueta e o botão de fechar duplicado.
+
+## 2026-08-31 — Link público do WhatsApp
+
+- Corrigida a montagem do contato da assistência para converter telefones brasileiros ao formato internacional do WhatsApp, preservando números já iniciados por `55` e recusando valores inválidos.
+- Adicionados cinco testes de normalização e geração do link; suíte com 25 testes, typecheck e build do painel web aprovados.
+
+## 2026-08-31 — Cadastro de equipamento
+
+- Desbloqueada a digitação manual do código do QR, mantendo o preenchimento pelo scanner no mesmo campo validado.
+- A data de instalação de novos equipamentos passa a iniciar com a data local atual em `DD/MM/AAAA` e continua editável; datas são validadas e convertidas para ISO somente na persistência, e edições não preenchem automaticamente campos históricos vazios.
+
+## 2026-08-31 — QR Codes e etiquetas no aplicativo
+
+- Criada área organizacional para pesquisar e filtrar equipamentos, visualizar status do QR, selecionar individualmente ou em lote e recuperar identidades ausentes pelo RPC idempotente existente, sem criar uma segunda arquitetura nem rotacionar tokens.
+- Recuperado o fluxo de pré-geração do painel: cada empresa pode reservar até 24 QRs ainda sem equipamento, imprimi-los e vinculá-los posteriormente no cadastro; a criação do ativo transfere o token reservado para a identidade pública em uma única transação.
+- As consultas e métricas do painel global passam a considerar tanto QRs disponíveis quanto vinculados, sem dupla contagem depois da associação.
+- Etiquetas usam QR, referência, empresa, logomarca ou iniciais nos tamanhos físicos 50 × 30, 60 × 40 e 80 × 50 mm.
+- Implementados preview, PDF no tamanho da etiqueta e paginação A4 por capacidade calculada, com redução explícita de dados secundários no menor tamanho.
+- A migration de preferências foi aplicada ao Supabase de desenvolvimento; 35 testes, typechecks nativo/web, `git diff --check` e export do bundle iOS foram aprovados nessa etapa.
+- As migrations de etiquetas e correção das funções foram aplicadas ao Supabase de desenvolvimento; o lint detectou e permitiu corrigir ambiguidade no vínculo e ordenação da consulta administrativa antes do teste funcional.
+- O gerador mobile deixou de depender de `crypto.getRandomValues`, indisponível no runtime React Native, reutilizando a fonte UUID já compatível com o aplicativo para alimentar o contrato compartilhado de referências.
+
 ## 2026-08-29 — QR de equipamento sempre público
 
 - Corrigido o contrato do QR de equipamento: todos os QRs existentes e novos são públicos sem ativação manual, o código contém sempre a URL HTTPS oficial e a interface deixou de oferecer rotação ou um segundo QR. Migration remota aplicada; TypeScript, build Vite e 20 testes passaram.

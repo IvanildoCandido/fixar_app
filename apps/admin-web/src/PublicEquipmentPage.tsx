@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { CalendarClock, CheckCircle2, MapPin, MessageCircle, ShieldCheck, Wrench } from "lucide-react";
 import { supabase } from "./supabase";
+import { createWhatsappUrl } from "./whatsapp";
 
 type Maintenance = { date: string; services: string[]; status: "completed" };
 type PublicEquipment = {
@@ -32,8 +33,10 @@ export function PublicEquipmentPage({ token }: { token: string }) {
 
   const { organization, equipment } = data;
   const logoUrl = organization.logo_path ? supabase.storage.from("organization-logos").getPublicUrl(organization.logo_path).data.publicUrl : null;
-  const phone = organization.phone?.replace(/\D/g, "");
-  const whatsapp = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(`Olá! Consultei o equipamento ${equipment.reference} pelo QR Code do FIXAR e gostaria de solicitar uma manutenção.`)}` : null;
+  const whatsapp = createWhatsappUrl(
+    organization.phone,
+    `Olá! Consultei o equipamento ${equipment.reference} pelo QR Code do FIXAR e gostaria de solicitar uma manutenção.`
+  );
   const equipmentName = [equipment.brand, equipment.model].filter(Boolean).join(" ") || equipment.type || "Equipamento";
 
   return <main className="public-page">

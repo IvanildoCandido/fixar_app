@@ -53,3 +53,31 @@ export async function scheduleMaintenanceReminder({
   });
 }
 
+export async function cancelMaintenanceReminder(workOrderId: string) {
+  if (Platform.OS === "web") return;
+
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const matching = scheduled.filter(
+    (notification) => notification.content.data?.workOrderId === workOrderId
+  );
+  await Promise.all(
+    matching.map((notification) =>
+      Notifications.cancelScheduledNotificationAsync(notification.identifier)
+    )
+  );
+}
+
+export async function cancelPreviousMaintenanceReminders(deviceId: string, currentWorkOrderId?: string) {
+  if (Platform.OS === "web") return;
+
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const matching = scheduled.filter((notification) =>
+    notification.content.data?.deviceId === deviceId &&
+    notification.content.data?.workOrderId !== currentWorkOrderId
+  );
+  await Promise.all(
+    matching.map((notification) =>
+      Notifications.cancelScheduledNotificationAsync(notification.identifier)
+    )
+  );
+}

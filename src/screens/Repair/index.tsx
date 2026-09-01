@@ -34,7 +34,7 @@ import { QrCode } from "lucide-react-native";
 import { useTheme } from "styled-components/native";
 import { FormField } from "../../design-system";
 import { useAuth } from "../../auth/AuthContext";
-import { calculateReminderDueDate, scheduleMaintenanceReminder } from "../../services/maintenanceReminders";
+import { calculateReminderDueDate, cancelPreviousMaintenanceReminders, scheduleMaintenanceReminder } from "../../services/maintenanceReminders";
 import { RootParamList } from "../../routes/routes.types";
 import { ChoiceChips, CollapsibleSection, MeasurementsEditor, TechnicalChecksEditor } from "../../components/TechnicalMaintenance";
 import { checksForServiceNames, makeDefaultChecks, maskedMoneyValue, withCalculatedDeltaT } from "../../domain/technicalMaintenance";
@@ -284,6 +284,11 @@ export const Repair = () => {
               setLocalStatus("syncing");
               const workOrder = await createRepairIdempotent(localIdRef.current, newRepair);
               await removeOfflineMaintenance(localIdRef.current, scope);
+              try {
+                await cancelPreviousMaintenanceReminders(selectedDevice.id, workOrder.id);
+              } catch {
+                // A ordem e o encerramento do lembrete anterior já foram persistidos.
+              }
               if (notification && reminderDueAt) {
                 try {
                   await scheduleMaintenanceReminder({

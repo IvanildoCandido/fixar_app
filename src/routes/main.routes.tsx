@@ -12,6 +12,7 @@ import { Login } from "../screens/Login";
 import { OrganizationSetup } from "../screens/OrganizationSetup";
 import { OrganizationProfile } from "../screens/OrganizationProfile";
 import { MaintenanceReminders } from "../screens/MaintenanceReminders";
+import { EquipmentLabels } from "../screens/EquipmentLabels";
 import { syncPendingMaintenances } from "../services/offlineMaintenance";
 import { createRepairIdempotent } from "../services/API";
 
@@ -54,6 +55,7 @@ export const MainRoutes = () => {
           <Screen name="Budgets" component={Budgets} />
           <Screen name="OrganizationProfile" component={OrganizationProfile} />
           <Screen name="MaintenanceReminders" component={MaintenanceReminders} />
+          <Screen name="EquipmentLabels" component={EquipmentLabels} />
         </>
       )}
     </Navigator>

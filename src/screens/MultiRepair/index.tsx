@@ -27,7 +27,7 @@ import { SelectCustomers } from "../../components/Form/SelectCustomers";
 import { SelectMultiDevices } from "../../components/Form/SelectMultiDevices";
 import { FormField } from "../../design-system";
 import { useAuth } from "../../auth/AuthContext";
-import { calculateReminderDueDate, scheduleMaintenanceReminder } from "../../services/maintenanceReminders";
+import { calculateReminderDueDate, cancelPreviousMaintenanceReminders, scheduleMaintenanceReminder } from "../../services/maintenanceReminders";
 import { maskedMoneyValue } from "../../domain/technicalMaintenance";
 
 export const MultiRepair = () => {
@@ -104,9 +104,12 @@ export const MultiRepair = () => {
                   ...device,
                   Customer: selectedCustomer,
                 };
+                const workOrder = createdOrders.find((order) => order.asset_id === device.id);
+                if (workOrder) {
+                  try { await cancelPreviousMaintenanceReminders(device.id, workOrder.id); } catch { /* A ordem já foi salva. */ }
+                }
                 if (notification && reminderDueAt) {
                   try {
-                    const workOrder = createdOrders.find((order) => order.asset_id === device.id);
                     if (!workOrder) throw new Error("Ordem do equipamento não retornada.");
                     await scheduleMaintenanceReminder({
                       device: reminderDevice,

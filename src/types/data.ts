@@ -75,6 +75,15 @@ export interface MaintenanceReminder {
   Device: Device;
 }
 export interface Page<T> { items: T[]; total: number; page: number; pageSize: number; hasMore: boolean; }
+export interface EquipmentLabelItem {
+  id: string; assetId: string | null; reference: string; brand: string; model: string; location: string;
+  equipmentType: string; customerId: string; customerName: string; publicToken: string | null;
+}
+export interface EquipmentLabelPreferences {
+  widthMm: 50 | 60 | 80; heightMm: 30 | 40 | 50;
+  showOrganizationPhone: boolean; showEquipmentType: boolean;
+  showBrandModel: boolean; showLocation: boolean;
+}
 export interface RepairFilters { customerId?: string; deviceId?: string; startAt?: string; endAt?: string; }
 export interface Period {
   start: number;

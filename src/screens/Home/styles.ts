@@ -32,10 +32,15 @@ export const SectionTitle = styled.Text`
 export const SectionHeaderRow = styled.View`flex-direction:row;align-items:center;justify-content:space-between;`;
 export const SectionLink = styled.Text`font-family:${({ theme }) => theme.fonts.semibold};font-size:${({ theme }) => theme.typography.bodySmall.size}px;color:${({ theme }) => theme.colors.primary};`;
 export const ReminderList = styled.View`gap: 10px; margin-bottom: 22px;`;
-export const ReminderCard = styled.TouchableOpacity`
+export const ReminderCard = styled.View`
   min-height: 68px; flex-direction: row; align-items: center; gap: 12px; padding: 12px 14px;
   border-radius: ${({ theme }) => theme.radii.lg}px; border: 1px solid ${({ theme }) => theme.colors.border};
   background-color: ${({ theme }) => theme.colors.card};
+`;
+export const ReminderAction = styled.Pressable`min-height: 44px; flex: 1; flex-direction: row; align-items: center; gap: 12px;`;
+export const ReminderDismiss = styled.Pressable`
+  width: 44px; height: 44px; align-items: center; justify-content: center;
+  border-radius: ${({ theme }) => theme.radii.md}px;
 `;
 export const ReminderContent = styled.View`flex: 1;`;
 export const ReminderTitle = styled.Text`
