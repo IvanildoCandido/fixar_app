@@ -122,7 +122,8 @@ Critério Apple: `displayPrice` aparece, JWS é validado no servidor, a organiza
 
 ## 13. Privacidade e publicação
 
-- [ ] Publicar política de privacidade e URL de suporte/termos reais.
+- [x] Páginas públicas versionadas: Política `https://fixar.systechsolucoes.com.br/privacidade` e Termos `https://fixar.systechsolucoes.com.br/termos`.
+- [ ] Publicar a build web que contém as páginas e confirmar a URL de suporte real na console da loja.
 - [ ] Declarar login, dados da organização, clientes, equipamentos, ordens, assinaturas e diagnósticos conforme a realidade do app.
 - [ ] Declarar câmera para leitura de QR, fotos somente para logo, notificações locais e armazenamento seguro de sessão.
 - [ ] Não declarar localização, analytics ou compartilhamento que o código não utiliza.
