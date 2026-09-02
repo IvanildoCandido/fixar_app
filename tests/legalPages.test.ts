@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const page = readFileSync("apps/admin-web/src/LegalPages.tsx", "utf8");
 const app = readFileSync("apps/admin-web/src/App.tsx", "utf8");
 const vercel = readFileSync("vercel.json", "utf8");
+const nestedVercel = readFileSync("apps/admin-web/vercel.json", "utf8");
 
 test("páginas legais possuem rotas públicas estáveis e links entre si", () => {
   assert.ok(app.includes('path === "/privacidade"'));
@@ -13,6 +14,8 @@ test("páginas legais possuem rotas públicas estáveis e links entre si", () =>
   assert.ok(page.includes('href="/termos"'));
   assert.ok(vercel.includes('"source": "/privacidade"'));
   assert.ok(vercel.includes('"source": "/termos"'));
+  assert.ok(nestedVercel.includes('"source": "/privacidade"'));
+  assert.ok(nestedVercel.includes('"source": "/termos"'));
 });
 
 test("texto legal reflete billing, QR público e offline sem prometer exclusão existente", () => {
