@@ -1,0 +1,17 @@
+import styled from "styled-components/native";
+export const Container = styled.View`flex:1;background-color:${({theme})=>theme.colors.background};`;
+export const Content = styled.ScrollView.attrs({ contentContainerStyle:{ flexGrow:1, padding:24, paddingBottom:48 }, keyboardShouldPersistTaps:"handled" })``;
+export const Nav = styled.View`min-height:48px;flex-direction:row;align-items:center;justify-content:space-between;`;
+export const Skip = styled.Pressable`padding:12px 0;`;
+export const Dots = styled.View`flex-direction:row;gap:6px;`;
+export const Dot = styled.View<{active:boolean}>`width:${({active})=>active?22:7}px;height:7px;border-radius:5px;background-color:${({theme,active})=>active?theme.colors.primary:theme.colors.border};`;
+export const Hero = styled.View`flex:1;min-height:450px;align-items:center;justify-content:center;padding:30px 4px;`;
+export const IconWrap = styled.View`width:108px;height:108px;border-radius:34px;align-items:center;justify-content:center;background-color:${({theme})=>theme.colors.secondary};margin-bottom:30px;`;
+export const Eyebrow = styled.Text`margin-top:30px;letter-spacing:1.3px;font-family:${({theme})=>theme.fonts.medium};font-size:12px;color:${({theme})=>theme.colors.primary};`;
+export const PageTitle = styled.Text`margin-top:10px;font-family:${({theme})=>theme.fonts.bold};font-size:28px;line-height:35px;color:${({theme})=>theme.colors.ink};`;
+export const StepTitle = styled.Text`text-align:center;font-family:${({theme})=>theme.fonts.bold};font-size:25px;line-height:32px;color:${({theme})=>theme.colors.ink};`;
+export const Intro = styled.Text`margin-top:14px;text-align:center;font-family:${({theme})=>theme.fonts.regular};font-size:16px;line-height:24px;color:${({theme})=>theme.colors.muted};`;
+export const Progress = styled.View`height:5px;margin:0 0 22px;border-radius:4px;background-color:${({theme})=>theme.colors.border};overflow:hidden;`;
+export const ProgressFill = styled.View<{width:number}>`height:100%;width:${({width})=>`${width*100}%`};background-color:${({theme})=>theme.colors.primary};`;
+export const NavButton = styled.Pressable`min-height:48px;flex-direction:row;align-items:center;gap:7px;padding:8px 0;`;
+export const SmallText = styled.Text`font-family:${({theme})=>theme.fonts.medium};font-size:${({theme})=>theme.typography.bodySmall.size}px;color:${({theme})=>theme.colors.muted};`;

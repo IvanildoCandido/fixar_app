@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Building2, ClipboardCheck, CloudOff, CreditCard, FileText, Lock, LogOut, Moon, QrCode, Sun, Wrench, X } from "lucide-react-native";
+import { BarChart3, Bell, Building2, Check, ClipboardCheck, CloudOff, CreditCard, FileText, Lock, LogOut, Moon, QrCode, Sun, Wrench, X } from "lucide-react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useRef, useState } from "react";
 import { Alert, ScrollView } from "react-native";
@@ -14,8 +14,10 @@ import {
   SignOutButton, Subtitle,
   ReminderCard, ReminderContent, ReminderDate, ReminderEmpty, ReminderList,
   ReminderMeta, ReminderTitle, SectionHeaderRow, SectionLink, PendingCard, PendingText, PendingAction, PendingDismiss, ReminderAction, ReminderDismiss,
+  FirstStepsCard, FirstStepsHeader, FirstStepsTitle, FirstStepsDismiss, FirstStep, FirstStepLabel, CoachCard, CoachKicker, CoachText, CoachActions, CoachAction,
 } from "./styles";
 import { clearOfflineMaintenances, listOfflineMaintenances } from "../../services/offlineMaintenance";
+import { completeCoach, hideChecklist, isChecklistHidden, loadFirstSteps, shouldShowCoach } from "../../services/onboarding";
 import { useCommercial } from "../../commercial/CommercialContext";
 
 const actions = [
@@ -38,6 +40,10 @@ export const Home = () => {
   const [pendingTotal, setPendingTotal] = useState(0);
   const { entitlements, showUpgrade } = useCommercial();
   const contentRef = useRef<ScrollView>(null);
+  const [firstSteps, setFirstSteps] = useState<{customer:boolean;equipment:boolean;qr:boolean;maintenance:boolean} | null>(null);
+  const [checklistHidden, setChecklistHidden] = useState(false);
+  const [coachIndex, setCoachIndex] = useState<number | null>(null);
+  const coachTips = ["Comece um atendimento por aqui.", "Gere etiquetas para identificar seus equipamentos.", "Acompanhe os retornos programados."];
 
   useFocusEffect(
     useCallback(() => {
@@ -54,10 +60,16 @@ export const Home = () => {
         listOfflineMaintenances({ userId: session.user.id, organizationId: session.organization.id })
           .then((items) => { if (active) setPendingTotal(items.length); })
           .catch(() => { if (active) setPendingTotal(0); });
+        Promise.all([loadFirstSteps(session.organization.id), isChecklistHidden(session.user.id, session.organization.id), shouldShowCoach(session.user.id, session.organization.id)])
+          .then(([steps, hidden, coach]) => { if (active) { setFirstSteps(steps); setChecklistHidden(hidden); if (coach) setCoachIndex(0); } }).catch(() => undefined);
       }
       return () => { active = false; };
     }, [session])
   );
+
+  const stepsDone = firstSteps && firstSteps.customer && firstSteps.equipment && firstSteps.qr && firstSteps.maintenance;
+  const dismissChecklist = async () => { if (!session) return; await hideChecklist(session.user.id, session.organization.id); setChecklistHidden(true); };
+  const finishCoach = async () => { if (session) await completeCoach(session.user.id); setCoachIndex(null); };
 
   const reminderDateLabel = (dueAt: string) => {
     const dueDate = new Date(dueAt);
@@ -132,6 +144,10 @@ export const Home = () => {
       </Header>
 
       <Content ref={contentRef} showsVerticalScrollIndicator={false}>
+        {coachIndex !== null ? <CoachCard><CoachKicker>Dica {coachIndex + 1} de 3</CoachKicker><CoachText>{coachTips[coachIndex]}</CoachText><CoachActions><CoachAction onPress={finishCoach}><PendingText>Pular</PendingText></CoachAction><CoachAction onPress={() => coachIndex === 2 ? finishCoach() : setCoachIndex(coachIndex + 1)}><PendingText>{coachIndex === 2 ? "Concluir" : "Próximo"}</PendingText></CoachAction></CoachActions></CoachCard> : null}
+        {firstSteps && !checklistHidden && !stepsDone ? <FirstStepsCard><FirstStepsHeader><FirstStepsTitle>Primeiros passos</FirstStepsTitle><FirstStepsDismiss accessibilityRole="button" accessibilityLabel="Ocultar primeiros passos" onPress={dismissChecklist}><X size={18} color={theme.colors.muted} /></FirstStepsDismiss></FirstStepsHeader>
+          {[{key:"company",label:"Completar dados da empresa",done:Boolean(session?.organization.name && session?.organization.phone),route:"OrganizationProfile"},{key:"customer",label:"Cadastrar primeiro cliente",done:firstSteps.customer,route:"Clientes"},{key:"equipment",label:"Cadastrar primeiro equipamento",done:firstSteps.equipment,route:"Ativos"},{key:"qr",label:"Gerar primeiros QR Codes",done:firstSteps.qr,route:"EquipmentLabels"},{key:"maintenance",label:"Registrar primeira manutenção",done:firstSteps.maintenance,route:"Repair"}].map((item) => <FirstStep key={item.key} disabled={item.done} onPress={() => !item.done && navigation.navigate(item.route)}><Check size={18} color={item.done ? theme.colors.primary : theme.colors.border} /><FirstStepLabel done={item.done}>{item.done ? "✓ " : ""}{item.label}</FirstStepLabel></FirstStep>)}
+        </FirstStepsCard> : null}
         {pendingTotal > 0 ? <PendingCard>
           <PendingAction accessibilityRole="button" accessibilityLabel={`${pendingTotal} manutenções locais`} onPress={() => navigation.navigate("FinishedServices")}>
             <CloudOff size={20} color={theme.colors.syncPending} />

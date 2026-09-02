@@ -75,6 +75,17 @@ export const PendingText = styled.Text`
   color: ${({ theme }) => theme.colors.foreground};
 `;
 export const ActionsGrid = styled.View`flex-direction: row; flex-wrap: wrap; gap: 12px;`;
+export const FirstStepsCard = styled.View`margin-bottom:18px;padding:16px;border-radius:${({theme})=>theme.radii.lg}px;background-color:${({theme})=>theme.colors.card};border:1px solid ${({theme})=>theme.colors.border};`;
+export const FirstStepsHeader = styled.View`flex-direction:row;align-items:center;justify-content:space-between;`;
+export const FirstStepsTitle = styled.Text`font-family:${({theme})=>theme.fonts.semibold};font-size:16px;color:${({theme})=>theme.colors.foreground};`;
+export const FirstStepsDismiss = styled.Pressable`padding:8px;`;
+export const FirstStep = styled.Pressable`min-height:42px;flex-direction:row;align-items:center;gap:10px;padding:7px 0;`;
+export const FirstStepLabel = styled.Text<{done:boolean}>`flex:1;font-family:${({theme})=>theme.fonts.regular};font-size:13px;color:${({theme,done})=>done?theme.colors.muted:theme.colors.foreground};text-decoration-line:${({done})=>done?"line-through":"none"};`;
+export const CoachCard = styled.View`margin-bottom:18px;padding:18px;border-radius:${({theme})=>theme.radii.lg}px;background-color:${({theme})=>theme.colors.secondary};border:1px solid ${({theme})=>theme.colors.primary};`;
+export const CoachKicker = styled.Text`font-family:${({theme})=>theme.fonts.medium};font-size:12px;color:${({theme})=>theme.colors.primary};text-transform:uppercase;letter-spacing:1px;`;
+export const CoachText = styled.Text`margin-top:6px;font-family:${({theme})=>theme.fonts.semibold};font-size:15px;line-height:21px;color:${({theme})=>theme.colors.secondaryForeground};`;
+export const CoachActions = styled.View`margin-top:12px;flex-direction:row;justify-content:flex-end;gap:18px;`;
+export const CoachAction = styled.Pressable`padding:8px 0;`;
 export const ButtonsArea = styled.View`
   padding: 12px 22px;
   align-items: center;

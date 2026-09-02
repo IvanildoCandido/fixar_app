@@ -3,6 +3,7 @@ import { User } from "@supabase/supabase-js";
 import { Linking } from "react-native";
 import { supabase } from "../services/supabase";
 import { setActiveOrganizationId } from "../services/API";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export type FixarRole = "owner" | "admin" | "technician" | "viewer";
 export interface FixarOrganization {
@@ -159,6 +160,7 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
       const { error } = await supabase.from("organizations").insert({ name: name.trim() });
       if (error) throw new Error(errorMessage(error, "Não foi possível criar a empresa."));
       const { data } = await supabase.auth.getUser();
+      if (data.user) await AsyncStorage.setItem(`fixar:onboarding:pending:${data.user.id}`, "1");
       await loadApplicationSession(data.user);
     },
     async signOut() {

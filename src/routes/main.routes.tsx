@@ -5,7 +5,7 @@ import { AppRoutes } from "./app.routes";
 import { MultiRepair } from "../screens/MultiRepair";
 import { Budgets } from "../screens/Budgets";
 import { AppState, View } from "react-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loading } from "../components/Loading";
 import { useAuth } from "../auth/AuthContext";
 import { Login } from "../screens/Login";
@@ -18,11 +18,21 @@ import { createRepairIdempotent } from "../services/API";
 import { CommercialProvider } from "../commercial/CommercialContext";
 import { MyPlan } from "../screens/MyPlan";
 import { Plans } from "../screens/Plans";
+import { Onboarding } from "../screens/Onboarding";
+import { isOnboardingPending } from "../services/onboarding";
 
 const { Navigator, Screen } = createStackNavigator();
 
 export const MainRoutes = () => {
   const { session, authenticatedUser, needsOrganization, loading } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+
+  useEffect(() => {
+    if (!session) { setShowOnboarding(false); setCheckingOnboarding(false); return; }
+    setCheckingOnboarding(true);
+    isOnboardingPending(session.user.id).then(setShowOnboarding).finally(() => setCheckingOnboarding(false));
+  }, [session]);
 
   useEffect(() => {
     if (!session) return;
@@ -33,7 +43,7 @@ export const MainRoutes = () => {
     return () => subscription.remove();
   }, [session]);
 
-  if (loading) {
+  if (loading || checkingOnboarding) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         <Loading />
@@ -51,6 +61,7 @@ export const MainRoutes = () => {
         <Screen name="OrganizationSetup" component={OrganizationSetup} />
       ) : (
         <>
+          {showOnboarding ? <Screen name="Onboarding" component={Onboarding} /> : null}
           <Screen name="MainTabs" component={AppRoutes} />
           <Screen name="Repair" component={Repair} />
           <Screen name="MultiRepair" component={MultiRepair} />

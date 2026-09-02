@@ -6,4 +6,5 @@ export type RootParamList = {
   Repair: { customer?: Customer; device?: Device; localId?: string } | undefined;
   MyPlan: undefined;
   Plans: undefined;
+  Onboarding: undefined;
 };
