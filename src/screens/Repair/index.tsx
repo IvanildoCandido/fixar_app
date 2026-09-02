@@ -53,8 +53,10 @@ import {
   saveOfflineMaintenance,
 } from "../../services/offlineMaintenance";
 import { commercialErrorMessage } from "../../services/commercialErrors";
+import { useCommercial } from "../../commercial/CommercialContext";
 
 export const Repair = () => {
+  const { showUpgrade } = useCommercial();
   type SectionKey = "diagnosis" | "services" | "checks" | "measurements" | "parts" | "result" | "comments" | "values" | "signatures";
   const sectionOrder: SectionKey[] = ["diagnosis", "services", "checks", "measurements", "parts", "result", "comments", "values", "signatures"];
   const theme = useTheme();
@@ -326,7 +328,7 @@ export const Repair = () => {
                   localId: localIdRef.current, ...scope, status: "blocked_commercial", form,
                   lastError: error instanceof Error ? error.message : "PLAN_LIMIT_REACHED",
                 });
-                Alert.alert("Manutenção salva neste aparelho", "Esta manutenção está salva neste aparelho, mas não pôde ser sincronizada porque o limite mensal do plano foi atingido. Seus dados continuam preservados.");
+                showUpgrade({resource:"work_orders_monthly",message:"Esta manutenção está salva neste aparelho. O limite mensal do plano foi atingido e os dados continuam preservados para retry após upgrade."});
               } else {
                 setLocalStatus("error");
                 try {

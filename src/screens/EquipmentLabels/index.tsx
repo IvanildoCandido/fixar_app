@@ -16,7 +16,8 @@ import {
 } from "../../services/API";
 import { EquipmentLabelItem } from "../../types/data";
 import { createEquipmentPublicUrl, createEquipmentReference } from "@fixar/qr-contract";
-import { commercialErrorMessage } from "../../services/commercialErrors";
+import { commercialErrorMessage, parseCommercialError } from "../../services/commercialErrors";
+import { useCommercial } from "../../commercial/CommercialContext";
 import uuid from "react-native-uuid";
 import {
   buildEquipmentLabelContent, DEFAULT_LABEL_HEIGHT_MM, DEFAULT_LABEL_WIDTH_MM,
@@ -24,6 +25,7 @@ import {
 } from "../../domain/equipmentLabels";
 
 export function EquipmentLabels() {
+  const { entitlements, showUpgrade } = useCommercial();
   const { session } = useAuth();
   const theme = useTheme();
   const [items, setItems] = useState<EquipmentLabelItem[]>([]);
@@ -39,7 +41,7 @@ export function EquipmentLabels() {
   const [quantity, setQuantity] = useState(1);
   const [savingReservation, setSavingReservation] = useState(false);
   const baseUrl = process.env.EXPO_PUBLIC_FIXAR_WEB_URL?.replace(/\/$/, "") ?? "";
-  const logoUrl = session?.organization.logo_path ? supabase.storage.from("organization-logos").getPublicUrl(session.organization.logo_path).data.publicUrl : null;
+  const logoUrl = entitlements?.features.custom_branding && session?.organization.logo_path ? supabase.storage.from("organization-logos").getPublicUrl(session.organization.logo_path).data.publicUrl : null;
 
   async function load() {
     try {
@@ -125,7 +127,7 @@ export function EquipmentLabels() {
       setReserving(false);
       setQuantity(1);
     } catch (cause) {
-      Alert.alert("Não foi possível gerar os QR Codes", commercialErrorMessage(cause) ?? (cause instanceof Error ? cause.message : "Tente novamente."));
+      const commercial=parseCommercialError(cause)??(cause as any);if(commercial?.code==="PLAN_LIMIT_REACHED")showUpgrade({resource:"qr_codes",usage:commercial.usage,limit:commercial.limit,message:commercialErrorMessage(cause)??undefined});else Alert.alert("Não foi possível gerar os QR Codes",cause instanceof Error?cause.message:"Tente novamente.");
     } finally {
       setSavingReservation(false);
     }

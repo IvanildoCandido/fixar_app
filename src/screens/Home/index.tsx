@@ -1,4 +1,4 @@
-import { BarChart3, Bell, Building2, ClipboardCheck, CloudOff, FileText, LogOut, Moon, QrCode, Sun, Wrench, X } from "lucide-react-native";
+import { BarChart3, Bell, Building2, ClipboardCheck, CloudOff, CreditCard, FileText, Lock, LogOut, Moon, QrCode, Sun, Wrench, X } from "lucide-react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useRef, useState } from "react";
 import { Alert, ScrollView } from "react-native";
@@ -16,6 +16,7 @@ import {
   ReminderMeta, ReminderTitle, SectionHeaderRow, SectionLink, PendingCard, PendingText, PendingAction, PendingDismiss, ReminderAction, ReminderDismiss,
 } from "./styles";
 import { clearOfflineMaintenances, listOfflineMaintenances } from "../../services/offlineMaintenance";
+import { useCommercial } from "../../commercial/CommercialContext";
 
 const actions = [
   { label: "Nova ordem", Icon: ClipboardCheck, route: "Repair" },
@@ -23,6 +24,7 @@ const actions = [
   { label: "Relatórios", Icon: BarChart3, route: "FinishedServices" },
   { label: "Orçamentos", Icon: FileText, route: "Budgets" },
   { label: "Dados da empresa", Icon: Building2, route: "OrganizationProfile" },
+  { label: "Meu Plano", Icon: CreditCard, route: "MyPlan" },
   { label: "QR Codes e etiquetas", Icon: QrCode, route: "EquipmentLabels" },
 ] as const;
 
@@ -34,6 +36,7 @@ export const Home = () => {
   const [reminders, setReminders] = useState<MaintenanceReminder[]>([]);
   const [remindersTotal, setRemindersTotal] = useState(0);
   const [pendingTotal, setPendingTotal] = useState(0);
+  const { entitlements, showUpgrade } = useCommercial();
   const contentRef = useRef<ScrollView>(null);
 
   useFocusEffect(
@@ -158,12 +161,12 @@ export const Home = () => {
         </ReminderList>
         <SectionTitle>Ações rápidas</SectionTitle>
         <ActionsGrid>
-          {actions.map((action) => (
-            <Action key={action.route} onPress={() => navigation.navigate(action.route)}>
-              <ActionIcon><action.Icon size={25} color={theme.colors.primary} /></ActionIcon>
-              <ActionLabel>{action.label}</ActionLabel>
+          {actions.map((action) => { const batchLocked=action.route==="MultiRepair"&&entitlements&&!entitlements.features.batch_orders; return (
+            <Action key={action.route} onPress={() => batchLocked ? showUpgrade({feature:"batch_orders",message:"Ordens em lote estão disponíveis no plano Profissional."}) : navigation.navigate(action.route)}>
+              <ActionIcon>{batchLocked?<Lock size={24} color={theme.colors.muted}/>:<action.Icon size={25} color={theme.colors.primary} />}</ActionIcon>
+              <ActionLabel>{action.label}{batchLocked?"  🔒":""}</ActionLabel>
             </Action>
-          ))}
+          )})}
         </ActionsGrid>
       </Content>
     </Container>

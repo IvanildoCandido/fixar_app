@@ -15,6 +15,9 @@ import { MaintenanceReminders } from "../screens/MaintenanceReminders";
 import { EquipmentLabels } from "../screens/EquipmentLabels";
 import { syncPendingMaintenances } from "../services/offlineMaintenance";
 import { createRepairIdempotent } from "../services/API";
+import { CommercialProvider } from "../commercial/CommercialContext";
+import { MyPlan } from "../screens/MyPlan";
+import { Plans } from "../screens/Plans";
 
 const { Navigator, Screen } = createStackNavigator();
 
@@ -38,7 +41,7 @@ export const MainRoutes = () => {
     );
   }
 
-  return (
+  const routes = (
     <Navigator
       screenOptions={{ headerShown: false }}
     >
@@ -56,8 +59,11 @@ export const MainRoutes = () => {
           <Screen name="OrganizationProfile" component={OrganizationProfile} />
           <Screen name="MaintenanceReminders" component={MaintenanceReminders} />
           <Screen name="EquipmentLabels" component={EquipmentLabels} />
+          <Screen name="MyPlan" component={MyPlan} />
+          <Screen name="Plans" component={Plans} />
         </>
       )}
     </Navigator>
   );
+  return session ? <CommercialProvider>{routes}</CommercialProvider> : routes;
 };

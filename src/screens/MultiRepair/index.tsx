@@ -29,6 +29,7 @@ import { FormField } from "../../design-system";
 import { useAuth } from "../../auth/AuthContext";
 import { calculateReminderDueDate, cancelPreviousMaintenanceReminders, scheduleMaintenanceReminder } from "../../services/maintenanceReminders";
 import { maskedMoneyValue } from "../../domain/technicalMaintenance";
+import { useCommercial } from "../../commercial/CommercialContext";
 
 export const MultiRepair = () => {
   const [selectedCustomer, setSelectedCustomer] =
@@ -47,6 +48,14 @@ export const MultiRepair = () => {
   const [total, setTotal] = useState(0);
   const navigation = useNavigation<any>();
   const { session } = useAuth();
+  const { entitlements, showUpgrade } = useCommercial();
+
+  useEffect(() => {
+    if (entitlements && !entitlements.features.batch_orders) {
+      showUpgrade({ feature: "batch_orders", message: "Ordens em lote estão disponíveis no plano Profissional." });
+      navigation.goBack();
+    }
+  }, [entitlements, navigation, showUpgrade]);
 
   useEffect(() => {
     setDevices([]);
@@ -130,10 +139,8 @@ export const MultiRepair = () => {
               navigation.navigate("FinishedServices");
             } catch (error) {
               console.log(error);
-              Alert.alert(
-                "Informação do Sistema",
-                "Não foi possível salvar, tente novamente."
-              );
+              if ((error as any)?.message === "PLAN_FEATURE_REQUIRED") showUpgrade({ feature: "batch_orders", message: "Ordens em lote estão disponíveis no plano Profissional." });
+              else Alert.alert("Informação do Sistema", "Não foi possível salvar, tente novamente.");
             }
           },
           style: "destructive",

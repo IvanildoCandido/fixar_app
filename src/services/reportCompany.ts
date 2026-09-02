@@ -2,9 +2,11 @@ import { FixarOrganization } from "../auth/AuthContext";
 import { ReportOrganization } from "../components/ReportModels/reportDocument";
 import { supabase } from "./supabase";
 import { cachedQuery } from "./queryCache";
+import { commercialBrandingEnabled } from "./commercial";
 
 export async function loadReportCompany(organization: FixarOrganization): Promise<ReportOrganization> {
-  return cachedQuery(`report-company:${organization.id}`, 300000, async () => {
+  const brandingEnabled = commercialBrandingEnabled();
+  return cachedQuery(`report-company:${organization.id}:${brandingEnabled}`, 300000, async () => {
   const { data } = await supabase.from("organizations")
     .select("name, legal_name, document, email, phone, address, logo_path")
     .eq("id", organization.id).maybeSingle();
@@ -15,6 +17,6 @@ export async function loadReportCompany(organization: FixarOrganization): Promis
     ? supabase.storage.from("organization-logos").getPublicUrl(logoPath).data.publicUrl
     : null;
 
-  return { ...source, logo_url: logoUrl };
+  return { ...source, logo_url: brandingEnabled ? logoUrl : null };
   });
 }

@@ -1,6 +1,6 @@
 # Próximas tarefas
 
-**Atualizado em:** `2026-09-01`
+**Atualizado em:** `2026-09-02`
 
 ## Objetivo confirmado
 
@@ -22,5 +22,5 @@ Evoluir o Fixar para um produto multiempresa e multiusuário, com possibilidade 
 12. Implementar convites e troca entre organizações no aplicativo.
 13. Implementar upload privado de anexos e auditoria das operações sensíveis.
 14. Substituir o restante do adaptador de compatibilidade por contratos de domínio tipados e ampliar os testes de integração.
-15. Definir planos e integração de assinatura somente após a base multiempresa estar validada.
+15. Definir checkout, gateway e integração real de assinatura somente após a camada comercial visível e a base multiempresa estarem validadas em uso.
 16. Ao avaliar plano Pro ou superior para o Supabase, habilitar manualmente a proteção contra senhas vazadas em Auth e confirmar a remoção do alerta no Security Advisor.

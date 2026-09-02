@@ -32,7 +32,8 @@ import { generateBudgetsHtml } from "../../components/ReportModels/Budgets";
 import { useAuth } from "../../auth/AuthContext";
 import { loadReportCompany } from "../../services/reportCompany";
 import { maskedMoneyValue } from "../../domain/technicalMaintenance";
-import { commercialErrorMessage } from "../../services/commercialErrors";
+import { commercialErrorMessage, parseCommercialError } from "../../services/commercialErrors";
+import { useCommercial } from "../../commercial/CommercialContext";
 export interface servicesTotal {
   id: string;
   qtd: number;
@@ -42,6 +43,7 @@ export interface servicesTotal {
   total: number;
 }
 export const Budgets = () => {
+  const { showUpgrade } = useCommercial();
   const { session } = useAuth();
   const [selectedCustomer, setSelectedCustomer] =
     useState<Customer>(defaultCustomer);
@@ -122,7 +124,7 @@ export const Budgets = () => {
         const html = generateBudgetsHtml(servicesSelected, partsSelected, total, company, selectedCustomer, comments, { discount: discountValue, surcharge: surchargeValue });
         await printToFile(html);
       } catch (error) {
-        Alert.alert("Mensagem do Sistema:", commercialErrorMessage(error) ?? (error instanceof Error ? error.message : "Não foi possível salvar o orçamento."));
+        const commercial=parseCommercialError(error)??(error as any);if(commercial?.code==="PLAN_LIMIT_REACHED")showUpgrade({resource:"quotes_monthly",usage:commercial.usage,limit:commercial.limit,message:commercialErrorMessage(error)??undefined});else Alert.alert("Mensagem do Sistema:",error instanceof Error?error.message:"Não foi possível salvar o orçamento.");
       }
     }
   };

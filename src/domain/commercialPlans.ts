@@ -39,6 +39,36 @@ export type EffectiveEntitlements = {
   historyDays: number | null;
 };
 
+export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled" | "paused" | "incomplete" | "grandfathered";
+export type CommercialEntitlements = EffectiveEntitlements & {
+  displayName: string;
+  subscriptionStatus: SubscriptionStatus;
+  billingCycle: "monthly" | "annual" | "none";
+  priceCents: number;
+};
+export type CommercialUsage = PlanLimits & { timezone: string };
+export type CommercialResource = keyof PlanLimits;
+export type CommercialFeature = keyof FeatureFlags;
+
+export const getLimit = (entitlements: CommercialEntitlements, resource: CommercialResource) => entitlements.limits[resource];
+export const getUsage = (usage: CommercialUsage, resource: CommercialResource) => usage[resource] ?? 0;
+export const hasFeature = (entitlements: CommercialEntitlements, feature: CommercialFeature) => entitlements.features[feature];
+export const canCreateResource = (entitlements: CommercialEntitlements, usage: CommercialUsage, resource: CommercialResource, requested = 1) => {
+  const limit = getLimit(entitlements, resource);
+  return limit === null || getUsage(usage, resource) + requested <= limit;
+};
+export const usageState = (usage: number, limit: number | null) => limit === null ? "unlimited" : usage >= limit ? "reached" : usage / limit >= .8 ? "near" : "normal";
+export const formatCommercialPrice = (priceCents: number, cycle: string) => priceCents === 0 ? "R$ 0" : `${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(priceCents / 100)}${cycle === "monthly" ? "/mês" : cycle === "annual" ? "/ano" : ""}`;
+
+export function mapCommercialEntitlements(payload: any): CommercialEntitlements {
+  return {
+    planCode: payload.plan_code, displayName: payload.display_name,
+    subscriptionStatus: payload.subscription_status, offerCode: payload.offer_code ?? undefined,
+    billingCycle: payload.billing_cycle ?? "none", priceCents: Number(payload.price_cents ?? 0),
+    limits: payload.limits, features: payload.features, historyDays: payload.history_days,
+  };
+}
+
 export function countDistinctQrIdentities(tokens: string[]): number {
   return new Set(tokens.filter(Boolean)).size;
 }

@@ -381,7 +381,7 @@ export async function createRepairsBatch(payload: any): Promise<Array<{ id: stri
     reminderEnabled: Boolean(payload.reminderEnabled), reminderIntervalDays: payload.reminderIntervalDays,
     reminderDueAt: payload.reminderDueAt, items,
   } });
-  if (result.error) throw result.error;
+  if (result.error) throw normalizeCommercialError(result.error);
   invalidateQueries(`repair-summaries:${organizationId}`); invalidateQueries(`reminders:${organizationId}`);
   return (result.data ?? []) as Array<{ id: string; asset_id: string }>;
 }

@@ -6,6 +6,7 @@ export type CommercialLimitError = {
   requested: number;
   plan_code: string;
 };
+export type CommercialFeatureError = { code: "PLAN_FEATURE_REQUIRED"; feature: "batch_orders" | "custom_branding" | "full_history"; plan_code: string };
 
 export function parseCommercialError(error: unknown): CommercialLimitError | null {
   const source = error as { message?: string; details?: string } | null;
@@ -21,7 +22,11 @@ export function parseCommercialError(error: unknown): CommercialLimitError | nul
 
 export function normalizeCommercialError(error: unknown): Error {
   const commercialError = parseCommercialError(error);
-  if (!commercialError) return error instanceof Error ? error : new Error("Não foi possível concluir a operação.");
+  if (!commercialError) {
+    const source=error as {message?:string;details?:string}|null;
+    if(source?.message==="PLAN_FEATURE_REQUIRED") { try { const details=JSON.parse(source.details??"{}") as CommercialFeatureError; return Object.assign(new Error(details.code),details); } catch {} }
+    return error instanceof Error ? error : new Error("Não foi possível concluir a operação.");
+  }
   return Object.assign(new Error(commercialError.code), commercialError);
 }
 

@@ -116,3 +116,15 @@ O limite mensal usa `work_orders.created_at` server-side em UTC; `completed_at` 
 Validação real no Supabase: 4/5→5/5; 6ª ordem recusada; resposta perdida retornou a mesma ordem mesmo em 5/5; concorrência em 4/5 produziu uma criação e uma recusa; upgrade e soft delete liberaram retry da mesma mutation; override 5→8 foi respeitado; INSERT direto e acessos cross-tenant foram negados; batch Free permaneceu funcional. Todas as fixtures e auditorias artificiais temporárias foram removidas.
 
 Verificações finais: suíte comercial com 64/64, suíte completa com 105/105 e `npx tsc --noEmit` sem erros.
+
+## Camada comercial visível
+
+O aplicativo possui `CommercialProvider` como fonte única para entitlements, usage e catálogo público, atualizado ao abrir e retornar ao foreground. `Meu Plano` mostra plano, status, oferta Founder, preço real, uso efetivo e limites; recursos ilimitados não usam barras artificiais e downgrades podem exibir usage acima do limite sem apagar dados. `Planos` usa o catálogo remoto e oferece apenas manifestação de interesse/atendimento, sem checkout ou cobrança simulada.
+
+O `UpgradePrompt` central atende limites e features no contexto da ação. A Home mantém foco operacional e exibe manutenção em lote com bloqueio explícito quando `batch_orders=false`. A RPC batch aplica o mesmo entitlement no backend. Histórico é limitado por RLS usando `created_at` e `history_days`, incluindo tabelas filhas e a ficha pública; upgrades com `full_history` restauram o acesso imediatamente, sem exclusão.
+
+Branding personalizado permanece salvo em qualquer plano. `custom_branding` decide o uso da logomarca nos documentos, etiquetas e ficha pública; nome e contato operacional do prestador permanecem disponíveis. O cache de documentos inclui o entitlement, refletindo upgrade/downgrade após refetch.
+
+O Global Admin reutiliza o painel existente e as tabelas comerciais: lista plano/status/usage, permite alterar plano e status, aplicar/remover Founder e criar/remover override de QR. `platform_admin_update_commercial` exige administrador global; subscriptions e overrides continuam produzindo eventos no `commercial_audit_log`. Não há service-role no cliente e não foi criado um segundo sistema de auditoria.
+
+Migrations incrementais: `20260902100000_commercial_experience_controls.sql`, `20260902103000_fix_commercial_history_policy_execute.sql` e `20260902104500_add_commercial_user_usage.sql`.

@@ -7,7 +7,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import uuid from "react-native-uuid";
 import { Customer } from "../../types/data";
 import API from "../../services/API";
-import { commercialErrorMessage } from "../../services/commercialErrors";
+import { commercialErrorMessage, parseCommercialError } from "../../services/commercialErrors";
+import { useCommercial } from "../../commercial/CommercialContext";
 
 interface ModalProps {
   closeModal: React.Dispatch<SetStateAction<boolean>>;
@@ -20,6 +21,7 @@ const schema = Yup.object().shape({
 });
 
 export const AddCustomer = ({ closeModal, dataEdit }: ModalProps) => {
+  const { showUpgrade } = useCommercial();
   const handleRegister = async (form: Customer) => {
     const newCustomer = {
       name: form.name,
@@ -38,7 +40,7 @@ export const AddCustomer = ({ closeModal, dataEdit }: ModalProps) => {
       closeModal(false);
     } catch (error) {
       console.log(error);
-      alert(commercialErrorMessage(error) ?? "Não foi possível salvar, tente novamente.");
+      const commercial=parseCommercialError(error)??(error as any);if(commercial?.code==="PLAN_LIMIT_REACHED")showUpgrade({resource:"customers",usage:commercial.usage,limit:commercial.limit,message:commercialErrorMessage(error)??undefined});else alert("Não foi possível salvar, tente novamente.");
     }
   };
 

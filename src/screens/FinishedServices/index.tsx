@@ -34,6 +34,7 @@ import {
   getOfflineMaintenance, listOfflineMaintenances, offlineMaintenanceToRepair,
   isCommercialLimitError, removeOfflineMaintenance, syncOfflineMaintenance, syncPendingMaintenances,
 } from "../../services/offlineMaintenance";
+import { useCommercial } from "../../commercial/CommercialContext";
 
 export const defaultData: Repair = {
   id: "",
@@ -48,6 +49,7 @@ export const defaultData: Repair = {
 
 export const FinishedServices = () => {
   const { session } = useAuth();
+  const { entitlements, showUpgrade } = useCommercial();
   const [reload, setReload] = useState(false);
   const [devicesModal, setDevicesModal] = useState(false);
   const [repairs, setRepairs] = useState<Repair[]>([]);
@@ -154,6 +156,7 @@ export const FinishedServices = () => {
         <Loading />
       ) : (
         <>
+          {entitlements && !entitlements.features.full_history && entitlements.historyDays !== null ? <ReportAction><ReportActionContent><ReportActionTitle>Histórico do plano Grátis</ReportActionTitle><ReportActionText>Você pode consultar os últimos {entitlements.historyDays} dias. Seus registros anteriores continuam preservados.</ReportActionText></ReportActionContent><Button label="Conhecer planos" variant="secondary" onPress={()=>showUpgrade({feature:"full_history",message:`Seu plano permite consultar o histórico dos últimos ${entitlements.historyDays} dias.`})}/></ReportAction> : null}
           {!filterApplied ? (
             <FilterStatus>Nenhum filtro aplicado</FilterStatus>
           ) : (
