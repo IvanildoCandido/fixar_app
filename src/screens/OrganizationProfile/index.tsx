@@ -9,6 +9,7 @@ import { Button, FormField } from "../../design-system";
 import { useAuth } from "../../auth/AuthContext";
 import { supabase } from "../../services/supabase";
 import { invalidateQueries } from "../../services/queryCache";
+import { useNavigation } from "@react-navigation/native";
 import { Actions, Container, Content, LogoCard, LogoPlaceholder, LogoPreview } from "./styles";
 import {
   ORGANIZATION_LOGO_MAX_BYTES,
@@ -21,6 +22,7 @@ type Fields = { name: string; legal_name: string; document: string; email: strin
 type OptimizedLogo = { uri: string; contentType: "image/png" | "image/webp"; extension: "png" | "webp" };
 
 export function OrganizationProfile() {
+  const navigation = useNavigation<any>();
   const { session, refreshSession } = useAuth();
   const theme = useTheme();
   const organization = session!.organization;
@@ -133,6 +135,6 @@ export function OrganizationProfile() {
     <FormField label="Telefone" value={fields.phone} onChangeText={set("phone")} keyboardType="phone-pad" />
     <FormField label="E-mail" value={fields.email} onChangeText={set("email")} keyboardType="email-address" autoCapitalize="none" />
     <FormField label="Endereço" value={fields.address} onChangeText={set("address")} multiline />
-    <Actions><Button label="Salvar dados da empresa" loading={saving} onPress={save} /></Actions>
+      <Actions><Button label="Salvar dados da empresa" loading={saving} onPress={save} /><Button label="Excluir minha conta" variant="destructive" onPress={() => navigation.navigate("DeleteAccount")} /></Actions>
   </Content></Container>;
 }

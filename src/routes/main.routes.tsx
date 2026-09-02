@@ -20,6 +20,7 @@ import { MyPlan } from "../screens/MyPlan";
 import { Plans } from "../screens/Plans";
 import { Onboarding } from "../screens/Onboarding";
 import { isOnboardingPending } from "../services/onboarding";
+import { DeleteAccount } from "../screens/DeleteAccount";
 
 const { Navigator, Screen } = createStackNavigator();
 
@@ -72,6 +73,7 @@ export const MainRoutes = () => {
           <Screen name="EquipmentLabels" component={EquipmentLabels} />
           <Screen name="MyPlan" component={MyPlan} />
           <Screen name="Plans" component={Plans} />
+          <Screen name="DeleteAccount" component={DeleteAccount} />
         </>
       )}
     </Navigator>

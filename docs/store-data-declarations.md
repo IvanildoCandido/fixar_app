@@ -17,4 +17,4 @@ Use esta lista como rascunho para Google Play Data Safety e Apple App Privacy. C
 
 Permissões observadas: câmera; biblioteca de fotos para logo; notificações locais; internet e armazenamento de sessão exigidos pela operação. Não foi identificada permissão de localização ou biometria. O texto da câmera atualmente menciona leitura de códigos; valide o texto final no binário antes do envio.
 
-Exclusão de conta e dados: o aplicativo possui logout, mas não foi identificado fluxo completo de solicitação/exclusão de conta. Trate como pendência de publicação até implementar ou disponibilizar o procedimento exigido pela loja.
+Exclusão de conta e dados: o aplicativo oferece um fluxo autenticado em **Dados da empresa → Excluir minha conta**. Membros que não são proprietários podem ter a conta excluída sem apagar dados compartilhados; proprietários de organizações com dados geram uma solicitação pendente para revisão segura. A página pública é `https://fixar.systechsolucoes.com.br/excluir-conta`.

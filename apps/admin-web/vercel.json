@@ -6,7 +6,8 @@
   "rewrites": [
     { "source": "/e/:token", "destination": "/index.html" },
     { "source": "/privacidade", "destination": "/index.html" },
-    { "source": "/termos", "destination": "/index.html" }
+    { "source": "/termos", "destination": "/index.html" },
+    { "source": "/excluir-conta", "destination": "/index.html" }
   ],
   "headers": [
     {

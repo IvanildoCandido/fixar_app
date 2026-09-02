@@ -6,7 +6,7 @@ import { createEquipmentPublicUrl } from "@fixar/qr-contract";
 import { supabase } from "./supabase";
 import { PublicEquipmentPage } from "./PublicEquipmentPage";
 import { createReferenceSequence } from "./referenceSequence";
-import { LegalPage } from "./LegalPages";
+import { AccountDeletionPage, LegalPage } from "./LegalPages";
 
 type View = "overview" | "qrcodes" | "organizations" | "users" | "settings";
 type Metrics = { users: number; organizations: number; customers: number; assets: number; work_orders: number; qr_codes: number; storage_files: number; storage_bytes: number };
@@ -73,5 +73,5 @@ function LoadingScreen() { return <div className="auth-screen"><div className="a
 function LoginScreen({ error, onSubmit }: { error: string; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) { return <div className="auth-screen"><div className="auth-box"><div className="brand-mark"><WrenchMark /></div><span className="eyebrow">FIXAR ADMIN</span><h1>Acesso do proprietário</h1><p>Entre para acompanhar a operação global do Fixar.</p><form onSubmit={onSubmit}><label>E-mail<input name="email" type="email" autoComplete="email" required /></label><label>Senha<input name="password" type="password" autoComplete="current-password" required /></label>{error && <div className="form-error"><X size={15} />{error}</div>}<button className="primary-button">Entrar no painel</button></form></div></div>; }
 const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR").format(new Date(value)); function formatBytes(bytes: number) { if (bytes < 1024) return `${bytes} B`; if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`; return `${(bytes / 1048576).toFixed(1)} MB`; }
 function WrenchMark() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4.3 4.3 0 0 0-5.5 5.5L4.4 16.6a2.1 2.1 0 1 0 3 3l4.8-4.8a4.3 4.3 0 0 0 5.5-5.5l-2.8 2.8-2.7-.7-.7-2.7 2.8-2.4Z" /></svg>; }
-function App() { const path = window.location.pathname.toLowerCase(); if (path === "/privacidade" || path === "/privacidade/") return <LegalPage kind="privacy" />; if (path === "/termos" || path === "/termos/") return <LegalPage kind="terms" />; const match = path.match(/^\/e\/([^/]+)\/?$/i); return match ? <PublicEquipmentPage token={match[1]} /> : <AdminApp />; }
+function App() { const path = window.location.pathname.toLowerCase(); if (path === "/privacidade" || path === "/privacidade/") return <LegalPage kind="privacy" />; if (path === "/termos" || path === "/termos/") return <LegalPage kind="terms" />; if (path === "/excluir-conta" || path === "/excluir-conta/") return <AccountDeletionPage />; const match = path.match(/^\/e\/([^/]+)\/?$/i); return match ? <PublicEquipmentPage token={match[1]} /> : <AdminApp />; }
 export default App;

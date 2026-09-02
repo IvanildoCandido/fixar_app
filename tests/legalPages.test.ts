@@ -22,6 +22,6 @@ test("texto legal reflete billing, QR público e offline sem prometer exclusão 
   assert.match(page, /Google Play ou App Store/);
   assert.match(page, /QR público/);
   assert.match(page, /temporariamente sem conexão/);
-  assert.match(page, /não possui atualmente um fluxo público automatizado de exclusão/);
+  assert.match(page, /fluxo de exclusão de conta/);
   assert.doesNotMatch(page, /100% seguro|criptografia militar/);
 });

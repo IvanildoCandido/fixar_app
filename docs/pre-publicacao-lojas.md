@@ -123,11 +123,13 @@ Critério Apple: `displayPrice` aparece, JWS é validado no servidor, a organiza
 ## 13. Privacidade e publicação
 
 - [x] Páginas públicas versionadas: Política `https://fixar.systechsolucoes.com.br/privacidade` e Termos `https://fixar.systechsolucoes.com.br/termos`.
+- [x] URL pública de exclusão de conta versionada: `https://fixar.systechsolucoes.com.br/excluir-conta`.
 - [ ] Publicar a build web que contém as páginas e confirmar a URL de suporte real na console da loja.
+- [x] Fluxo autenticado de exclusão de conta e página pública `/excluir-conta` versionados; exclusão de proprietário com dados fica em revisão segura.
 - [ ] Declarar login, dados da organização, clientes, equipamentos, ordens, assinaturas e diagnósticos conforme a realidade do app.
 - [ ] Declarar câmera para leitura de QR, fotos somente para logo, notificações locais e armazenamento seguro de sessão.
 - [ ] Não declarar localização, analytics ou compartilhamento que o código não utiliza.
-- [ ] Confirmar o fluxo de exclusão de conta exigido pela loja; o app atualmente encerra sessão, mas não oferece fluxo completo de exclusão de conta. **PENDÊNCIA DE PUBLICAÇÃO**.
+- [ ] Publicar e testar `https://fixar.systechsolucoes.com.br/excluir-conta`; exclusão de conta proprietária com dados exige revisão segura. **PENDÊNCIA DE PUBLICAÇÃO**.
 
 ## 14. Materiais necessários para publicação
 
