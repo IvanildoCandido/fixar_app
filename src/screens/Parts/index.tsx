@@ -59,7 +59,7 @@ export const Parts = () => {
       <SearchInput value={query} onChangeText={setQuery} placeholder="Buscar peças" />
       {loading ? (
         <Loading />
-      ) : error ? <ErrorState description={error} /> : (
+      ) : error ? <ErrorState description={error} onRetry={loadParts} /> : (
         <PartsList
           ref={listRef}
           data={filtered}
@@ -77,7 +77,7 @@ export const Parts = () => {
             />
           )}
           keyExtractor={(item: Part) => item.id}
-          ListEmptyComponent={<EmptyState title={query ? "Peça não encontrada" : "Nenhuma peça cadastrada"} />}
+          ListEmptyComponent={<EmptyState title={query ? "Peça não encontrada" : "Nenhuma peça cadastrada"} description={!query ? "Adicione materiais usados nos seus atendimentos." : "Revise o termo pesquisado."} actionLabel={!query ? "Cadastrar peça" : undefined} onAction={!query ? handleModalOpen : undefined} />}
         />
       )}
       <Modal visible={partsModal} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setPartsModal(false)}>

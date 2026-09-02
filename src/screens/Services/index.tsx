@@ -62,7 +62,7 @@ export const Services = () => {
       <SearchInput value={query} onChangeText={setQuery} placeholder="Buscar serviços" />
       {loading ? (
         <Loading />
-      ) : error ? <ErrorState description={error} /> : (
+      ) : error ? <ErrorState description={error} onRetry={loadServices} /> : (
         <ServicesList
           ref={listRef}
           data={filtered}
@@ -80,7 +80,7 @@ export const Services = () => {
             />
           )}
           keyExtractor={(item: Service) => item.id}
-          ListEmptyComponent={<EmptyState title={query ? "Serviço não encontrado" : "Nenhum serviço cadastrado"} />}
+          ListEmptyComponent={<EmptyState title={query ? "Serviço não encontrado" : "Nenhum serviço cadastrado"} description={!query ? "Cadastre serviços para montar suas ordens e orçamentos." : "Revise o termo pesquisado."} actionLabel={!query ? "Cadastrar serviço" : undefined} onAction={!query ? handleModalOpen : undefined} />}
         />
       )}
       <Modal visible={servicesModal} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setServicesModal(false)}>

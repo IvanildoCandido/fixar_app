@@ -14,6 +14,7 @@ export const Container = styled.TouchableOpacity<ButtonProps>`
   border-radius: ${({ theme }) => theme.radii.md}px;
   border: 1px solid ${({ theme, type }) => type === "save" ? theme.colors.primary : theme.colors.border};
   margin-top: 12px;
+  opacity: ${({ disabled }) => disabled ? 0.5 : 1};
 `;
 
 export const Title = styled.Text<ButtonProps>`

@@ -76,7 +76,7 @@ export const Customers = () => {
       {loading ? (
         <Loading />
       ) : error ? (
-        <ErrorState description={error} />
+        <ErrorState description={error} onRetry={loadCustomers} />
       ) : (
         <CustomersList
           ref={listRef}
@@ -96,7 +96,7 @@ export const Customers = () => {
             />
           )}
           keyExtractor={(item: Customer) => item.id}
-          ListEmptyComponent={<EmptyState title={query ? "Cliente não encontrado" : "Nenhum cliente cadastrado"} description={query ? "Revise o termo pesquisado." : "Use o botão adicionar para cadastrar o primeiro cliente."} />}
+          ListEmptyComponent={<EmptyState title={query ? "Cliente não encontrado" : "Nenhum cliente cadastrado ainda"} description={query ? "Revise o termo pesquisado." : "Cadastre o primeiro cliente para iniciar sua operação."} actionLabel={!query ? "Cadastrar primeiro cliente" : undefined} onAction={!query ? handleModalOpen : undefined} />}
         />
       )}
       <Modal visible={customerModal} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setCustomerModal(false)}>

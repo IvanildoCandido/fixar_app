@@ -162,7 +162,7 @@ export function EquipmentLabels() {
       {loading ? (
         <Spinner />
       ) : error ? (
-        <ErrorState description={error} />
+        <ErrorState description={error} onRetry={load} />
       ) : (
         <List>
           {filtered.map((item) => (
@@ -180,7 +180,7 @@ export function EquipmentLabels() {
         </List>
       )}
 
-      {!loading && !error && !filtered.length ? <EmptyState title="Nenhum equipamento encontrado" /> : null}
+      {!loading && !error && !filtered.length ? <EmptyState title={query ? "Nenhum equipamento encontrado" : "Nenhum QR Code disponível"} description={query ? "Revise o termo pesquisado." : "Gere QR Codes para identificar seus equipamentos."} actionLabel={!query ? "Gerar QR Code" : undefined} onAction={!query ? () => setReserving(true) : undefined} /> : null}
 
       <Bottom>
         <Button label={generateButtonLabel} disabled={!selected.length} loading={generating} onPress={openConfiguration} />

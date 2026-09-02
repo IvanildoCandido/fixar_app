@@ -88,7 +88,7 @@ export const Devices = () => {
       <SearchInput value={query} onChangeText={setQuery} placeholder="Buscar equipamentos" />
       {loading ? (
         <Loading />
-      ) : error ? <ErrorState description={error} /> : (
+      ) : error ? <ErrorState description={error} onRetry={loadDevices} /> : (
         <DevicesList
           ref={listRef}
           data={filtered}
@@ -108,7 +108,7 @@ export const Devices = () => {
             />
           )}
           keyExtractor={(item: DeviceProps) => item.id}
-          ListEmptyComponent={<EmptyState title={query ? "Equipamento não encontrado" : "Nenhum equipamento cadastrado"} />}
+          ListEmptyComponent={<EmptyState title={query ? "Equipamento não encontrado" : "Nenhum equipamento cadastrado"} description={!query ? "Cadastre um equipamento para acompanhar suas manutenções." : "Revise o termo pesquisado."} actionLabel={!query ? "Cadastrar equipamento" : undefined} onAction={!query ? handleModalOpen : undefined} />}
         />
       )}
       <Modal visible={devicesModal} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setDevicesModal(false)}>

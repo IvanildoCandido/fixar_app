@@ -362,8 +362,8 @@ export const Repair = () => {
       setSelectedDevice(device);
     } catch (error) {
       Alert.alert(
-        "Erro interno:",
-        "Não foi possível encontrar o equipamento verifique se o mesmo encontra-se cadastrado!"
+        "Equipamento não encontrado",
+        "Não foi possível localizar este equipamento. Verifique se ele está cadastrado e tente novamente."
       );
     }
   };
