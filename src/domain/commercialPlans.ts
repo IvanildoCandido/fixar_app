@@ -45,6 +45,11 @@ export type CommercialEntitlements = EffectiveEntitlements & {
   subscriptionStatus: SubscriptionStatus;
   billingCycle: "monthly" | "annual" | "none";
   priceCents: number;
+  provider?: "manual" | "google_play" | "app_store" | null;
+  providerProductId?: string | null;
+  currentPeriodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  autoRenew?: boolean | null;
 };
 export type CommercialUsage = PlanLimits & { timezone: string };
 export type CommercialResource = keyof PlanLimits;
@@ -66,6 +71,8 @@ export function mapCommercialEntitlements(payload: any): CommercialEntitlements 
     subscriptionStatus: payload.subscription_status, offerCode: payload.offer_code ?? undefined,
     billingCycle: payload.billing_cycle ?? "none", priceCents: Number(payload.price_cents ?? 0),
     limits: payload.limits, features: payload.features, historyDays: payload.history_days,
+    provider: payload.provider ?? null, providerProductId: payload.provider_product_id ?? null,
+    currentPeriodEnd: payload.current_period_end ?? null, cancelAtPeriodEnd: Boolean(payload.cancel_at_period_end), autoRenew: payload.auto_renew ?? null,
   };
 }
 

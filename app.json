@@ -38,6 +38,7 @@
       ],
       "expo-secure-store",
       "expo-notifications",
+      "expo-iap",
       [
         "expo-image-picker",
         {

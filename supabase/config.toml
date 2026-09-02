@@ -16,3 +16,12 @@ enabled = true
 enabled = true
 site_url = "https://fixar.systechsolucoes.com.br"
 additional_redirect_urls = ["exp://127.0.0.1:8081", "http://localhost:8081"]
+
+[functions.billing-verify-purchase]
+verify_jwt = true
+
+[functions.billing-apple-notification]
+verify_jwt = false
+
+[functions.billing-google-rtdn]
+verify_jwt = false

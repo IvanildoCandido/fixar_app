@@ -1,0 +1,14 @@
+import { admin, applyVerifiedSubscription, json } from "../_shared/billing.ts";
+
+Deno.serve(async (request) => {
+  if (request.method !== "POST") return json({ message: "Method not allowed" }, 405);
+  try {
+    const body = await request.json(); const signed = body.signedPayload as string;
+    const key = Deno.env.get("APPLE_ROOT_CA_BASE64"); const bundle = Deno.env.get("APPLE_BUNDLE_ID"); if (!signed || !key || !bundle) throw new Error("APPLE_NOT_CONFIGURED");
+    const { SignedDataVerifier, Environment } = await import("npm:@apple/app-store-server-library@3.1.0"); const environment = Deno.env.get("APPLE_ENVIRONMENT") === "sandbox" ? Environment.SANDBOX : Environment.PRODUCTION; const verifier = new SignedDataVerifier(key.split(",").map((root) => Buffer.from(root, "base64")), true, environment, bundle, Deno.env.get("APPLE_APP_ID") ? Number(Deno.env.get("APPLE_APP_ID")) : undefined); const notification = await verifier.verifyAndDecodeNotification(signed); const eventId = notification.notificationUUID; const client = admin();
+    if (eventId) { const inserted = await client.from("billing_webhook_events").insert({ provider: "app_store", external_event_id: eventId, payload_hash: eventId }); if (inserted.error && inserted.error.code === "23505") return json({ received: true, duplicate: true }); }
+    const data = notification.data; if (!data?.signedTransactionInfo) return json({ received: true }); const transaction = await verifier.verifyAndDecodeTransaction(data.signedTransactionInfo); if (!transaction.originalTransactionId || !transaction.productId) return json({ received: true }); const { data: subscription } = await client.from("organization_subscriptions").select("organization_id, offer_code").eq("provider", "app_store").eq("provider_original_transaction_id", transaction.originalTransactionId).maybeSingle(); if (!subscription) return json({ received: true });
+    const productPlan = transaction.productId === "fixar_professional_monthly" ? "professional" : transaction.productId === "fixar_team_monthly" ? "team" : null; if (!productPlan) return json({ received: true }); const status = ["EXPIRED", "REVOKE", "REFUND"].includes(notification.notificationType) ? "canceled" : notification.notificationType === "DID_FAIL_TO_RENEW" ? "past_due" : "active";
+    await applyVerifiedSubscription({ organizationId: subscription.organization_id, provider: "app_store", planCode: productPlan, productId: transaction.productId, providerSubscriptionId: transaction.transactionId, purchaseToken: data.signedTransactionInfo, originalTransactionId: transaction.originalTransactionId, periodEnd: transaction.expiresDate ? new Date(transaction.expiresDate).toISOString() : null, autoRenew: null, providerStatus: status, environment: environment === Environment.SANDBOX ? "sandbox" : "production" }); return json({ received: true });
+  } catch { return json({ message: "Notification could not be verified" }, 400); }
+});
