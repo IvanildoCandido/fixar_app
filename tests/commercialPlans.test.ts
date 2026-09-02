@@ -82,63 +82,63 @@ test("Founder altera apenas a apresentação, não o plano técnico", () => {
 });
 
 test("Professional Founder usa o preço Founder definido no backend", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /\('founder', 'Founder', 2990, 'monthly'\)/);
   assert.match(migration, /'professional'.*100/s);
 });
 
 test("grandfathered não é catálogo público e não expõe ofertas internas", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /is_public boolean not null default false/);
   assert.match(migration, /commercial_plan_catalog_select[\s\S]*is_active and is_public/);
   assert.doesNotMatch(migration, /grant select on public\.commercial_offers/);
 });
 
 test("migration preserva organizações existentes como grandfathered", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /select id, 'grandfathered', 'grandfathered'\s+from public\.organizations/);
   assert.match(migration, /after insert on public\.organizations/);
 });
 
 test("migration declara isolamento de subscription por organização", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /organization_subscriptions_select_member[\s\S]*private\.is_organization_member\(organization_id\)/);
 });
 
 test("migration não concede escrita autenticada em tabelas comerciais", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /revoke all on table public\.commercial_plan_catalog[\s\S]*from public, anon, authenticated/);
   assert.doesNotMatch(migration, /grant (insert|update|delete)[\s\S]*to authenticated/);
 });
 
 test("usuário comum não recebe INSERT de subscription", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.doesNotMatch(migration, /grant insert on public\.organization_subscriptions/);
 });
 
 test("usuário comum não recebe INSERT de override", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.doesNotMatch(migration, /grant insert on public\.organization_plan_overrides/);
 });
 
 test("usuário comum não recebe UPDATE do catálogo", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.doesNotMatch(migration, /grant update on public\.commercial_plan_catalog/);
 });
 
 test("auditoria comercial registra mudanças e overrides", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /previous_plan_code[\s\S]*new_plan_code[\s\S]*previous_status[\s\S]*new_status[\s\S]*price_cents/);
   assert.match(migration, /organization_plan_overrides_audit/);
 });
 
 test("override numérico é resolvido pelo SQL", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /'qr_codes', coalesce\(plan_override\.limit_qr_codes, catalog\.limit_qr_codes\)/);
 });
 
 test("override de feature é resolvido pelo SQL", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /'batch_orders', coalesce\(plan_override\.feature_batch_orders, catalog\.feature_batch_orders\)/);
 });
 
@@ -149,47 +149,47 @@ test("vincular QR existente não aumenta usage", () => assert.equal(countDistinc
 test("reimpressão não aumenta usage", () => assert.equal(countDistinctQrIdentities(["1", "2", "3", "4", "5", "1", "2", "3", "4", "5"]), 5));
 
 test("SQL deduplica QR por public_token", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /select public_token from public\.generated_qr_codes[\s\S]*union[\s\S]*select public_token from public\.equipment_public_links/);
 });
 
 test("SQL não conta link automático de equipment soft deleted", () => {
-  const migration = readFileSync("supabase/migrations/20260901193000_commercial_usage_qr_active_links.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901190037_commercial_usage_qr_active_links.sql", "utf8");
   assert.match(migration, /join public\.assets asset[\s\S]*asset\.deleted_at is null/);
 });
 
 test("SQL exclui customer com soft delete", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /from public\.customers where organization_id = p_organization_id and deleted_at is null/);
 });
 
 test("SQL exclui equipment com soft delete", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /from public\.assets where organization_id = p_organization_id and deleted_at is null/);
 });
 
 test("usage mensal usa intervalo semiaberto em UTC", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /now\(\) at time zone 'UTC'[\s\S]*created_at >= month_start and created_at < next_month/);
 });
 
 test("usage mensal exclui ordens removidas", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /from public\.work_orders, bounds where organization_id = p_organization_id and deleted_at is null/);
 });
 
 test("usage mensal exclui orçamentos removidos", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /from public\.quotes, bounds where organization_id = p_organization_id and deleted_at is null/);
 });
 
 test("RPC público exige membro da organização", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /get_current_organization_entitlements[\s\S]*if not private\.is_organization_member\(p_organization_id\)/);
 });
 
 test("RPC público de usage exige membro da organização", () => {
-  const migration = readFileSync("supabase/migrations/20260901000000_commercial_plans_and_entitlements.sql", "utf8");
+  const migration = readFileSync("supabase/migrations/20260901185620_commercial_plans_and_entitlements.sql", "utf8");
   assert.match(migration, /get_current_organization_commercial_usage[\s\S]*if not private\.is_organization_member\(p_organization_id\)/);
 });
 

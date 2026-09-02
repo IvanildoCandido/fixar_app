@@ -3,9 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { commercialErrorMessage, parseCommercialError } from "../src/services/commercialErrors";
 
-const migration = readFileSync("supabase/migrations/20260901200000_com3_resource_creation_enforcement.sql", "utf8");
-const correction = readFileSync("supabase/migrations/20260901203000_com3_fix_asset_payload_argument.sql", "utf8");
-const workOrderMigration = readFileSync("supabase/migrations/20260901220000_com3c_work_order_enforcement.sql", "utf8");
+const migration = readFileSync("supabase/migrations/20260901190740_com3_resource_creation_enforcement.sql", "utf8");
+const correction = readFileSync("supabase/migrations/20260901191004_com3_fix_asset_payload_argument.sql", "utf8");
+const workOrderMigration = readFileSync("supabase/migrations/20260901193925_com3c_work_order_enforcement.sql", "utf8");
 const workOrderGrantCorrection = readFileSync("supabase/migrations/20260901223000_com3c_minimum_work_order_grants.sql", "utf8");
 
 function limitError(resource: "customer" | "equipment" | "qr_code") {

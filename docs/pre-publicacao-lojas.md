@@ -4,8 +4,8 @@
 
 - [x] Código de cobrança nativa preparado com `expo-iap` para builds nativos.
 - [x] Backend de verificação, associação à organização, restore e eventos de ciclo de vida versionado.
-- [ ] Migration `20260903100000_native_billing_subscriptions.sql` aplicada no Supabase remoto. O histórico remoto tem migrations sem correspondência local; não executar `db push`, `db reset` ou `migration repair` sem reconciliação explícita.
-- [ ] Edge Functions de billing publicadas (a listagem remota atual não apresenta funções).
+- [x] Migration `20260903100000_native_billing_subscriptions.sql` aplicada no Supabase remoto após trazer para o repositório as sete migrations comerciais remotas legítimas e remover seus duplicados locais obsoletos.
+- [x] Edge Functions `billing-verify-purchase`, `billing-apple-notification` e `billing-google-rtdn` publicadas.
 - [ ] Secrets de produção cadastrados no Supabase.
 - [ ] Produtos, credenciais e notificações configurados nas lojas.
 - [x] Testes locais: 118/118; TypeScript mobile e admin aprovados.
@@ -24,12 +24,12 @@ Use os valores e contratos exibidos pelas plataformas no dia da configuração; 
 
 ## 2. Preparar o Supabase
 
-Projeto configurado localmente: `gcdhtfytpatvesadeyim`; URL de functions: `https://gcdhtfytpatvesadeyim.supabase.co/functions/v1/`.
+Projeto configurado localmente: `gcdhtfytpatvesadeyim`; URL de functions: `https://gcdhtfytpatvesadeyim.supabase.co/functions/v1/`. Migration e funções foram aplicadas/publicadas; secrets Google/Apple e consoles continuam pendentes.
 
 1. No diretório do projeto, confirme `npx supabase link --project-ref gcdhtfytpatvesadeyim`.
-2. Compare `npx supabase migration list` com os arquivos locais. Antes de aplicar a migration de billing, peça reconciliação dos migrations remotos que não existem localmente; não use reset nem force push.
-3. Depois da reconciliação, aplique somente `20260903100000_native_billing_subscriptions.sql` com `npx supabase db push` e confirme a tabela `billing_webhook_events`, colunas de provider e grants no Dashboard.
-4. Publique, uma vez, as funções abaixo após a migration: `billing-verify-purchase`, `billing-apple-notification` e `billing-google-rtdn`.
+2. `npx supabase migration list` agora mostra versões locais/remotas alinhadas até `20260902104500`, com `20260903100000` aplicada em ambos.
+3. A migration criou `billing_webhook_events`, colunas de provider e grants; confirme esses objetos no Dashboard quando necessário.
+4. As funções foram publicadas com `npx supabase functions deploy --use-api`; não execute `--prune`.
 5. Cadastre os secrets listados abaixo em **Project Settings → Edge Functions → Secrets**. Nunca os coloque em `.env`, no app ou no Git.
 6. Observe **Edge Functions → Logs** durante os smoke tests.
 
@@ -149,11 +149,11 @@ Forneça no Play Console uma conta de tester funcional, instruções para abrir 
 |---|---|---|---|---|---|
 | Billing client | PASS | — | — | — | Pronto no build nativo |
 | Verificação server-side | PASS | PENDENTE deploy | API pendente | API pendente | Aguardando configuração |
-| Migration billing | PASS local | PENDENTE remoto | — | — | Reconciliar histórico |
+| Migration billing | PASS | PASS | — | — | Aplicada remotamente |
 | Produto Professional | PASS | — | PENDENTE | PENDENTE | Criar nas consoles |
 | Produto Team | PASS | — | PENDENTE | PENDENTE | Criar nas consoles |
-| RTDN | PASS código | PENDENTE deploy/secrets | PENDENTE | — | Configurar Pub/Sub |
-| Notifications V2 | PASS código | PENDENTE deploy/secrets | — | PENDENTE | Configurar App Store |
+| RTDN | PASS código | PASS deploy; secrets pendentes | PENDENTE | — | Configurar Pub/Sub |
+| Notifications V2 | PASS código | PASS deploy; secrets pendentes | — | PENDENTE | Configurar App Store |
 | Compra sandbox/teste | PASS fluxo | PENDENTE | PENDENTE | PENDENTE | Executar em builds reais |
 
 ## Ordem que você deve seguir

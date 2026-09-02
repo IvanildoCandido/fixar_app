@@ -27,14 +27,11 @@ begin
   limit_value := (entitlements->'limits'->>limit_key)::integer;
   usage_value := (usage->>usage_key)::integer;
   if limit_value is not null and usage_value + p_requested > limit_value then
-    raise exception using
-      message = 'PLAN_LIMIT_REACHED',
-      detail = jsonb_build_object(
-        'code', 'PLAN_LIMIT_REACHED', 'resource', p_resource, 'usage', usage_value,
-        'limit', limit_value, 'requested', p_requested,
-        'plan_code', entitlements->>'plan_code'
-      )::text,
-      errcode = 'P0001';
+    raise exception using message = 'PLAN_LIMIT_REACHED', detail = jsonb_build_object(
+      'code', 'PLAN_LIMIT_REACHED', 'resource', p_resource, 'usage', usage_value,
+      'limit', limit_value, 'requested', p_requested,
+      'plan_code', entitlements->>'plan_code'
+    )::text, errcode = 'P0001';
   end if;
 end;
 $$;
@@ -53,7 +50,6 @@ begin
     raise exception 'Not authorized' using errcode = '42501';
   end if;
   perform private.assert_can_create_resource(target_organization_id, 'quote', 1);
-
   select coalesce(sum(
     coalesce(nullif(item->>'qtd', '')::numeric, nullif(item->>'quantity', '')::numeric, 1)
     * coalesce(nullif(item->>'price', '')::numeric, 0)
@@ -64,35 +60,21 @@ begin
     union all
     select value as item from jsonb_array_elements(part_items)
   ) items;
-
-  insert into public.quotes (
-    organization_id, customer_id, status, notes, subtotal, discount, surcharge, total
-  ) values (
-    target_organization_id,
-    (payload->>'customerId')::uuid,
-    'draft',
-    nullif(payload->>'comments', ''),
-    calculated_subtotal,
-    coalesce(nullif(payload->>'discount', '')::numeric, 0),
+  insert into public.quotes (organization_id, customer_id, status, notes, subtotal, discount, surcharge, total)
+  values (
+    target_organization_id, (payload->>'customerId')::uuid, 'draft', nullif(payload->>'comments', ''),
+    calculated_subtotal, coalesce(nullif(payload->>'discount', '')::numeric, 0),
     coalesce(nullif(payload->>'surcharge', '')::numeric, 0),
     coalesce(nullif(payload->>'total', '')::numeric, calculated_subtotal)
   ) returning * into created_quote;
-
-  insert into public.quote_items (
-    organization_id, quote_id, catalog_item_id, kind, name, description, quantity, unit_price
-  )
-  select target_organization_id, created_quote.id, nullif(item->>'id', '')::uuid, 'service',
-    item->>'name', nullif(item->>'description', ''),
-    coalesce(nullif(item->>'qtd', '')::numeric, nullif(item->>'quantity', '')::numeric, 1),
-    coalesce(nullif(item->>'price', '')::numeric, 0)
+  insert into public.quote_items (organization_id, quote_id, catalog_item_id, kind, name, description, quantity, unit_price)
+  select target_organization_id, created_quote.id, nullif(item->>'id', '')::uuid, 'service', item->>'name', nullif(item->>'description', ''),
+    coalesce(nullif(item->>'qtd', '')::numeric, nullif(item->>'quantity', '')::numeric, 1), coalesce(nullif(item->>'price', '')::numeric, 0)
   from jsonb_array_elements(service_items) item
   union all
-  select target_organization_id, created_quote.id, nullif(item->>'id', '')::uuid, 'part',
-    item->>'name', nullif(item->>'description', ''),
-    coalesce(nullif(item->>'qtd', '')::numeric, nullif(item->>'quantity', '')::numeric, 1),
-    coalesce(nullif(item->>'price', '')::numeric, 0)
+  select target_organization_id, created_quote.id, nullif(item->>'id', '')::uuid, 'part', item->>'name', nullif(item->>'description', ''),
+    coalesce(nullif(item->>'qtd', '')::numeric, nullif(item->>'quantity', '')::numeric, 1), coalesce(nullif(item->>'price', '')::numeric, 0)
   from jsonb_array_elements(part_items) item;
-
   return created_quote;
 end;
 $$;
@@ -111,11 +93,9 @@ create trigger quotes_commercial_restore
 before update on public.quotes
 for each row execute function private.enforce_quote_restore();
 
-create index quotes_commercial_created_idx
-  on public.quotes (organization_id, created_at)
-  where deleted_at is null;
-
+create index quotes_commercial_created_idx on public.quotes (organization_id, created_at) where deleted_at is null;
 revoke insert on table public.quotes from authenticated;
 revoke all on function private.enforce_quote_restore() from public, anon, authenticated;
 revoke all on function public.create_quote(jsonb) from public, anon;
 grant execute on function public.create_quote(jsonb) to authenticated;
+;

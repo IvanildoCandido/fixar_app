@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { commercialErrorMessage, parseCommercialError } from "../src/services/commercialErrors";
 
-const migration = readFileSync("supabase/migrations/20260901210000_com3b_quote_creation_enforcement.sql", "utf8");
-const correction = readFileSync("supabase/migrations/20260901213000_com3b_fix_quote_item_enum.sql", "utf8");
+const migration = readFileSync("supabase/migrations/20260901191616_com3b_quote_creation_enforcement.sql", "utf8");
+const correction = readFileSync("supabase/migrations/20260901191653_com3b_fix_quote_item_enum.sql", "utf8");
 
 function quoteLimitError() {
   return { message: "PLAN_LIMIT_REACHED", details: JSON.stringify({ code: "PLAN_LIMIT_REACHED", resource: "quote", usage: 3, limit: 3, requested: 1, plan_code: "free" }) };

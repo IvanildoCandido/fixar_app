@@ -46,21 +46,17 @@ begin
   if not private.has_organization_role(v_organization_id, array['owner','admin','technician']::public.organization_role[]) then
     raise exception 'Not authorized for organization' using errcode = '42501';
   end if;
-
   perform pg_advisory_xact_lock(hashtextextended(v_organization_id::text, 0));
   select id into existing_order from public.work_orders
   where organization_id = v_organization_id and offline_local_id = v_local_id;
   if existing_order is not null then return existing_order; end if;
-
   if not exists (select 1 from public.customers where id=v_customer_id and organization_id=v_organization_id and deleted_at is null)
      or not exists (select 1 from public.assets where id=v_asset_id and customer_id=v_customer_id and organization_id=v_organization_id and deleted_at is null) then
     raise exception 'Customer or asset does not belong to organization' using errcode = '23503';
   end if;
-
   perform private.assert_can_create_resource(v_organization_id, 'work_order', 1);
   select coalesce(sum(coalesce((value->>'quantity')::numeric,1) * coalesce((value->>'price')::numeric,0)),0)
   into subtotal from jsonb_array_elements(coalesce(payload->'services','[]'::jsonb) || coalesce(payload->'parts','[]'::jsonb));
-
   insert into public.work_orders (
     organization_id, customer_id, asset_id, assigned_to, offline_local_id, status, comments,
     subtotal, total, completed_at, reminder_enabled, reminder_interval_days, reminder_due_at,
@@ -80,7 +76,6 @@ begin
     nullif(payload->>'technicianName',''), nullif(payload->>'customerSignerName',''),
     nullif(payload->>'technicianSignatureSvg',''), nullif(payload->>'customerSignatureSvg',''), nullif(payload->>'signedAt','')::timestamptz
   ) returning id into v_order_id;
-
   for item in select value || jsonb_build_object('_kind','service') from jsonb_array_elements(coalesce(payload->'services','[]'::jsonb))
     union all select value || jsonb_build_object('_kind','part') from jsonb_array_elements(coalesce(payload->'parts','[]'::jsonb)) loop
     insert into public.work_order_items (organization_id,work_order_id,catalog_item_id,kind,name,description,quantity,unit_price)
@@ -101,12 +96,10 @@ exception when unique_violation then
 end;
 $$;
 
--- Keep batch behavior unchanged while allowing it to use table-owned privileges
--- after direct authenticated INSERT is revoked.
 alter function public.create_work_orders_batch(jsonb) security definer;
 alter function public.create_work_orders_batch(jsonb) set search_path = '';
-
 revoke insert on table public.work_orders from authenticated;
 revoke all on function private.assert_can_create_resource(uuid,text,integer) from public,anon,authenticated;
 revoke all on function public.create_work_order_offline(jsonb) from public,anon;
 grant execute on function public.create_work_order_offline(jsonb) to authenticated;
+;

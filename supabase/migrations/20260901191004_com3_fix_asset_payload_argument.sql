@@ -37,6 +37,6 @@ begin
   return created_asset_id;
 end;
 $$;
-
 revoke all on function public.create_asset_with_reserved_qr(jsonb) from public, anon;
 grant execute on function public.create_asset_with_reserved_qr(jsonb) to authenticated;
+;

@@ -287,3 +287,4 @@ grant execute on function public.get_current_organization_commercial_usage(uuid)
 
 comment on function private.get_organization_commercial_usage(uuid) is
   'Counts active customers/assets, distinct permanent QR identities, and non-deleted monthly records in UTC. UNION removes reserved/linked QR duplicates.';
+;

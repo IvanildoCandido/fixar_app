@@ -29,3 +29,4 @@ $$;
 
 comment on function private.get_organization_commercial_usage(uuid) is
   'Counts active customers/assets, distinct permanent QR identities, and non-deleted monthly records in UTC. Reserved generated QR rows count; equipment links count only when their asset is active; UNION removes duplicates.';
+;
