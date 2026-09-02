@@ -44,6 +44,7 @@ import { SelectDevices } from "../../components/Form/SelectDevices";
 import {
   createOfflineMaintenanceId,
   getOfflineMaintenance,
+  isCommercialLimitError,
   isNetworkError,
   listOfflineMaintenances,
   OfflineMaintenanceForm,
@@ -51,6 +52,7 @@ import {
   removeOfflineMaintenance,
   saveOfflineMaintenance,
 } from "../../services/offlineMaintenance";
+import { commercialErrorMessage } from "../../services/commercialErrors";
 
 export const Repair = () => {
   type SectionKey = "diagnosis" | "services" | "checks" | "measurements" | "parts" | "result" | "comments" | "values" | "signatures";
@@ -318,6 +320,13 @@ export const Repair = () => {
                   "A manutenção foi concluída localmente e aguarda sincronização. Seus dados continuam seguros neste aparelho.",
                   [{ text: "OK", onPress: () => navigation.navigate("FinishedServices") }]
                 );
+              } else if (isCommercialLimitError(error)) {
+                setLocalStatus("blocked_commercial");
+                await saveOfflineMaintenance({
+                  localId: localIdRef.current, ...scope, status: "blocked_commercial", form,
+                  lastError: error instanceof Error ? error.message : "PLAN_LIMIT_REACHED",
+                });
+                Alert.alert("Manutenção salva neste aparelho", "Esta manutenção está salva neste aparelho, mas não pôde ser sincronizada porque o limite mensal do plano foi atingido. Seus dados continuam preservados.");
               } else {
                 setLocalStatus("error");
                 try {
@@ -329,7 +338,7 @@ export const Repair = () => {
                   Alert.alert("Falha ao salvar localmente", "O envio falhou e o dispositivo não conseguiu atualizar o rascunho. Não feche esta tela e tente novamente.");
                   return;
                 }
-                Alert.alert("Manutenção não enviada", "O rascunho continua salvo neste dispositivo. Verifique os dados e tente novamente.");
+                Alert.alert("Manutenção não enviada", commercialErrorMessage(error) ?? "O rascunho continua salvo neste dispositivo. Verifique os dados e tente novamente.");
               }
             }
           },

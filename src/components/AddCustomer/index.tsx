@@ -7,6 +7,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import uuid from "react-native-uuid";
 import { Customer } from "../../types/data";
 import API from "../../services/API";
+import { commercialErrorMessage } from "../../services/commercialErrors";
 
 interface ModalProps {
   closeModal: React.Dispatch<SetStateAction<boolean>>;
@@ -37,7 +38,7 @@ export const AddCustomer = ({ closeModal, dataEdit }: ModalProps) => {
       closeModal(false);
     } catch (error) {
       console.log(error);
-      alert("Não foi possível salvar, tente novamente.");
+      alert(commercialErrorMessage(error) ?? "Não foi possível salvar, tente novamente.");
     }
   };
 

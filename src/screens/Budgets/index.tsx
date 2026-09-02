@@ -32,6 +32,7 @@ import { generateBudgetsHtml } from "../../components/ReportModels/Budgets";
 import { useAuth } from "../../auth/AuthContext";
 import { loadReportCompany } from "../../services/reportCompany";
 import { maskedMoneyValue } from "../../domain/technicalMaintenance";
+import { commercialErrorMessage } from "../../services/commercialErrors";
 export interface servicesTotal {
   id: string;
   qtd: number;
@@ -121,7 +122,7 @@ export const Budgets = () => {
         const html = generateBudgetsHtml(servicesSelected, partsSelected, total, company, selectedCustomer, comments, { discount: discountValue, surcharge: surchargeValue });
         await printToFile(html);
       } catch (error) {
-        Alert.alert("Mensagem do Sistema:", error instanceof Error ? error.message : "Não foi possível salvar o orçamento.");
+        Alert.alert("Mensagem do Sistema:", commercialErrorMessage(error) ?? (error instanceof Error ? error.message : "Não foi possível salvar o orçamento."));
       }
     }
   };

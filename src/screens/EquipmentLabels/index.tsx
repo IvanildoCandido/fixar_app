@@ -16,6 +16,7 @@ import {
 } from "../../services/API";
 import { EquipmentLabelItem } from "../../types/data";
 import { createEquipmentPublicUrl, createEquipmentReference } from "@fixar/qr-contract";
+import { commercialErrorMessage } from "../../services/commercialErrors";
 import uuid from "react-native-uuid";
 import {
   buildEquipmentLabelContent, DEFAULT_LABEL_HEIGHT_MM, DEFAULT_LABEL_WIDTH_MM,
@@ -124,7 +125,7 @@ export function EquipmentLabels() {
       setReserving(false);
       setQuantity(1);
     } catch (cause) {
-      Alert.alert("Não foi possível gerar os QR Codes", cause instanceof Error ? cause.message : "Tente novamente.");
+      Alert.alert("Não foi possível gerar os QR Codes", commercialErrorMessage(cause) ?? (cause instanceof Error ? cause.message : "Tente novamente."));
     } finally {
       setSavingReservation(false);
     }

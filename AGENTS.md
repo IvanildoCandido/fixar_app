@@ -3,6 +3,8 @@
 Este é o repositório `Fixar`. Antes de qualquer atividade, leia `docs/IA/ORQUESTRADOR.md` e siga sua inicialização.
 
 - Consulte `docs/IA/README.md`, `docs/IA/MEMORIA/ESTADO-ATUAL.md` e `docs/IA/MEMORIA/PROXIMAS-TAREFAS.md`.
+- Consulte também `docs/commercial-plans.md` para seguir a base comercial implementada em COM-1/COM-2.
+- Toda criação de recurso sujeito a limite deve possuir enforcement autoritativo no backend; pré-validação no cliente nunca substitui validação transacional do servidor.
 - Preserve contratos e alterações preexistentes; prefira mudanças pequenas e reversíveis.
 - Não invente regras de negócio; use `[PENDENTE DE CONFIRMAÇÃO]` quando faltar evidência.
 - Diferencie: analisado, confirmado, planejado, implementado, testado e commitado.

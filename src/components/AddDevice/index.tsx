@@ -24,6 +24,7 @@ import { extractEquipmentReference, extractFixarEquipmentToken } from "@fixar/qr
 import { resolveQrForRegistration } from "../../services/API";
 import { ChoiceChips, CollapsibleSection } from "../TechnicalMaintenance";
 import { brazilianDateToIso, isoDateToBrazilian, todayInBrazilianFormat } from "../../utils/brazilianDate";
+import { commercialErrorMessage } from "../../services/commercialErrors";
 
 interface ModalProps {
   closeModal: React.Dispatch<SetStateAction<boolean>>;
@@ -120,7 +121,7 @@ export const AddDevice = ({ closeModal, dataEdit }: ModalProps) => {
       console.log(error);
       Alert.alert(
         "Informação do Sistema",
-        "Não foi possível salvar, tente novamente."
+        commercialErrorMessage(error) ?? "Não foi possível salvar, tente novamente."
       );
     }
   };

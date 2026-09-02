@@ -1,6 +1,6 @@
 # Estado atual
 
-**Snapshot observado:** `2026-09-01`
+**Snapshot observado:** `2026-09-02`
 **Branch observada:** `main`  
 **Commit-base observado:** `189b5b8`
 
@@ -71,6 +71,7 @@ Este documento descreve o worktree observado, não produção.
 - Publicação Vercel preparada na raiz do monorepo: `vercel.json` compila `apps/admin-web`, publica o dashboard em `/`, preserva a ficha pública em `/e/:token` por rewrite SPA e adiciona headers básicos; checklist em `docs/DEPLOY-VERCEL.md`.
 - Dashboard publicado em `fixar.systechsolucoes.com.br`; a migration de correção do grant de `private.is_platform_admin()` foi aplicada e validada como `authenticated`, eliminando o `403` da policy de `generated_qr_codes` observado em produção.
 - Dashboard administrativo concluído no worktree com quatro visões funcionais: overview navegável, QR Codes associados/filtrados por empresa com geração sequencial e exclusão, organizações com contagens de clientes/equipamentos/ordens/membros/QRs e usuários com associações/último acesso. A migration `complete_platform_admin_dashboard` foi aplicada e validada remotamente.
+- Fundação comercial COM-1 a COM-3C concluída no worktree e validada no Supabase de desenvolvimento: catálogo, assinaturas, overrides, usage e enforcement transacional de clientes, equipamentos, QR, orçamentos e manutenções individuais. A COM-3C confirmou quota Free 5/mês, idempotência após resposta perdida, concorrência, retry após upgrade/soft delete, override, isolamento cross-tenant e bloqueio de INSERT direto; o batch permaneceu fora da quota desta fase. A corretiva `20260901223000_com3c_minimum_work_order_grants.sql` removeu de `authenticated` os privilégios `TRUNCATE`, `REFERENCES` e `TRIGGER` em `work_orders`. Fixtures remotas removidas; suíte completa 105/105 e TypeScript aprovados.
 
 ## Limitações da descoberta
 

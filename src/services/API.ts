@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import { EquipmentLabelItem, EquipmentLabelPreferences, Page, Repair, RepairFilters } from "../types/data";
 import { cachedQuery, clearQueryCache, invalidateQueries } from "./queryCache";
 import type { OfflineMaintenancePayload } from "./offlineMaintenance";
+import { normalizeCommercialError } from "./commercialErrors";
 
 let activeOrganizationId: string | null = null;
 
@@ -16,7 +17,7 @@ function requireOrganization() {
 }
 
 function unwrap<T>({ data, error }: { data: T | null; error: Error | null }): T {
-  if (error) throw error;
+  if (error) throw normalizeCommercialError(error);
   return data as T;
 }
 
@@ -237,7 +238,7 @@ export async function listReservedEquipmentQrCodes(): Promise<EquipmentLabelItem
 export async function reserveEquipmentQrCodes(references: string[]): Promise<EquipmentLabelItem[]> {
   const organizationId = requireOrganization();
   const { data, error } = await supabase.rpc("reserve_equipment_qr_codes", { target_organization_id: organizationId, requested_references: references });
-  if (error) throw error;
+  if (error) throw normalizeCommercialError(error);
   return (data ?? []).map((row: any) => ({ id: `reserved:${row.id}`, assetId: null, reference: row.reference,
     brand: "", model: "", location: "Aguardando cadastro", equipmentType: "", customerId: "", customerName: "QR disponível",
     publicToken: row.public_token }));
@@ -355,93 +356,12 @@ async function closePreviousMaintenanceReminders(assetId: string, currentWorkOrd
 
 async function listMaintenanceReminders() { return (await listMaintenanceRemindersPage(0, 5)).items; }
 
-async function createRepair(payload: any) {
-  const organizationId = requireOrganization();
-  const services = payload.services ?? [];
-  const parts = payload.parts ?? [];
-  const subtotal = [...services, ...parts].reduce(
-    (sum, item) => sum + Number(item.quantity ?? 1) * Number(item.price ?? 0), 0
-  );
-  const order = unwrap<any>((await supabase.from("work_orders").insert({
-    organization_id: organizationId,
-    customer_id: payload.customerId,
-    asset_id: payload.deviceId,
-    status: "completed",
-    comments: payload.comments || null,
-    subtotal,
-    total: Number(payload.total ?? subtotal),
-    completed_at: payload.date ?? new Date().toISOString(),
-    assigned_to: payload.assignedTo ?? null,
-    reminder_enabled: Boolean(payload.reminderEnabled),
-    reminder_interval_days: payload.reminderIntervalDays ?? null,
-    reminder_due_at: payload.reminderDueAt ?? null,
-    reported_problem: payload.diagnosis?.reportedProblem || null,
-    found_condition: payload.diagnosis?.foundCondition || null,
-    technical_diagnosis: payload.diagnosis?.technicalDiagnosis || null,
-    equipment_status: payload.result?.equipmentStatus ?? null,
-    problem_resolved: payload.result?.problemResolved ?? null,
-    return_required: payload.result?.returnRequired ?? null,
-    return_reason: payload.result?.returnReason || null,
-    customer_recommendation: payload.result?.customerRecommendation || null,
-    recommendation_priority: payload.result?.recommendationPriority ?? null,
-    technician_name: payload.technicianName || null,
-    customer_signer_name: payload.customerSignerName || null,
-    technician_signature_svg: payload.technicianSignatureSvg || null,
-    customer_signature_svg: payload.customerSignatureSvg || null,
-    signed_at: payload.signedAt ?? null,
-  }).select("id").single()) as any);
-
-  const items = [
-    ...services.map((item: any) => ({ ...item, kind: "service" })),
-    ...parts.map((item: any) => ({ ...item, kind: "part" })),
-  ].map((item) => ({
-    organization_id: organizationId,
-    work_order_id: order.id,
-    catalog_item_id: item.id,
-    kind: item.kind,
-    name: item.name,
-    description: item.description || null,
-    quantity: Number(item.quantity ?? 1),
-    unit_price: Number(item.price ?? 0),
-  }));
-  if (items.length) {
-    const result = await supabase.from("work_order_items").insert(items);
-    if (result.error) {
-      await supabase.from("work_orders").delete().eq("id", order.id);
-      throw result.error;
-    }
-  }
-  const checks = (payload.checks ?? []).map((item: any) => ({
-    organization_id: organizationId, work_order_id: order.id, key: item.key,
-    label: item.label, category: item.category || null, status: item.status,
-    observation: item.observation || null, sort_order: item.order ?? 0,
-  }));
-  const measurements = (payload.measurements ?? []).map((item: any) => ({
-    organization_id: organizationId, work_order_id: order.id, key: item.key,
-    label: item.label, value: Number(item.value), unit: item.unit,
-    source: item.source ?? "manual", sort_order: item.order ?? 0,
-  }));
-  for (const [table, rows] of [
-    ["work_order_technical_checks", checks],
-    ["work_order_measurements", measurements],
-  ] as const) {
-    if (!rows.length) continue;
-    const result = await supabase.from(table).insert(rows as any);
-    if (result.error) {
-      await supabase.from("work_orders").delete().eq("id", order.id);
-      throw result.error;
-    }
-  }
-  invalidateQueries(`repair-summaries:${organizationId}`); invalidateQueries(`reminders:${organizationId}`);
-  return order;
-}
-
 export async function createRepairIdempotent(localId: string, payload: OfflineMaintenancePayload) {
   const organizationId = requireOrganization();
   const result = await supabase.rpc("create_work_order_offline", {
     payload: { ...payload, localId, organizationId },
   });
-  if (result.error) throw result.error;
+  if (result.error) throw normalizeCommercialError(result.error);
   await closePreviousMaintenanceReminders(payload.deviceId, result.data as string);
   invalidateQueries(`repair-summaries:${organizationId}`);
   invalidateQueries(`reminders:${organizationId}`);
@@ -470,36 +390,16 @@ async function createQuote(payload: any) {
   const organizationId = requireOrganization();
   const items = [...(payload.services ?? []), ...(payload.parts ?? [])];
   const subtotal = items.reduce((sum, item) => sum + Number(item.total ?? item.price ?? 0), 0);
-  const quote = unwrap<any>((await supabase.from("quotes").insert({
-    organization_id: organizationId,
-    customer_id: payload.customerId,
-    status: "draft",
-    notes: payload.comments || null,
-    subtotal,
-    discount: Number(payload.discount ?? 0),
-    surcharge: Number(payload.surcharge ?? 0),
-    total: Number(payload.total ?? subtotal),
-  }).select("id").single()) as any);
-  const rows = [
-    ...(payload.services ?? []).map((item: any) => ({ ...item, kind: "service" })),
-    ...(payload.parts ?? []).map((item: any) => ({ ...item, kind: "part" })),
-  ].map((item) => ({
-    organization_id: organizationId,
-    quote_id: quote.id,
-    catalog_item_id: item.id,
-    kind: item.kind,
-    name: item.name,
-    description: item.description || null,
-    quantity: Number(item.qtd ?? 1),
-    unit_price: Number(item.price ?? 0),
-  }));
-  if (rows.length) {
-    const result = await supabase.from("quote_items").insert(rows);
-    if (result.error) {
-      await supabase.from("quotes").delete().eq("id", quote.id);
-      throw result.error;
-    }
-  }
+  const quote = unwrap<any>(await supabase.rpc("create_quote", {
+    payload: {
+      ...payload,
+      organizationId,
+      subtotal,
+      discount: Number(payload.discount ?? 0),
+      surcharge: Number(payload.surcharge ?? 0),
+      total: Number(payload.total ?? subtotal),
+    },
+  }) as any);
   invalidateQueries(`quotes:${organizationId}`);
   return quote;
 }
@@ -524,10 +424,10 @@ const API = {
   async post(path: string, payload: any): Promise<{ data: any }> {
     const organizationId = requireOrganization();
     if (path === "/customers/add") {
-      const result = await supabase.from("customers")
-        .insert({ organization_id: organizationId, ...payload }).select().single();
+      const result = await supabase.rpc("create_customer", { payload: { ...payload, organizationId } });
+      const customer = unwrap<any>(result as any);
       invalidateQueries(`customers:${organizationId}`);
-      return { data: mapCustomer(unwrap<any>(result as any)) };
+      return { data: mapCustomer(customer) };
     }
     if (path === "/devices/add") {
       const result = await supabase.rpc("create_asset_with_reserved_qr", { payload: { ...payload, organizationId } });
@@ -546,7 +446,6 @@ const API = {
       invalidateQueries(`catalog:${organizationId}:${kind}`);
       return { data: mapCatalogItem(unwrap<any>(result as any)) };
     }
-    if (path === "/repairs/add") return { data: await createRepair(payload) };
     if (path === "/quotes/add") return { data: await createQuote(payload) };
     if (path === "devices/reference" || path === "/devices/reference") {
       const result = await supabase.from("assets").select("*, Customer:customers(*)")

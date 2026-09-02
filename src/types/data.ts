@@ -54,7 +54,7 @@ export interface Repair {
   technicianSignatureSvg?: string;
   customerSignatureSvg?: string;
   signedAt?: string;
-  offlineStatus?: "draft" | "pending" | "syncing" | "error";
+  offlineStatus?: "draft" | "pending" | "syncing" | "error" | "blocked_commercial";
   offlineLocalId?: string;
 }
 

@@ -32,7 +32,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { loadReportCompany } from "../../services/reportCompany";
 import {
   getOfflineMaintenance, listOfflineMaintenances, offlineMaintenanceToRepair,
-  removeOfflineMaintenance, syncOfflineMaintenance, syncPendingMaintenances,
+  isCommercialLimitError, removeOfflineMaintenance, syncOfflineMaintenance, syncPendingMaintenances,
 } from "../../services/offlineMaintenance";
 
 export const defaultData: Repair = {
@@ -143,7 +143,7 @@ export const FinishedServices = () => {
       await loadRepairs(0, true);
     } else {
       setRepairs((current) => current.map((item) => item.id === repair.id ? { ...item, offlineStatus: "error" } : item));
-      Alert.alert("Ainda não foi possível sincronizar", "Verifique sua conexão e tente novamente. O registro continua salvo neste dispositivo.");
+      Alert.alert(isCommercialLimitError(record.lastError) ? "Manutenção salva neste aparelho" : "Ainda não foi possível sincronizar", isCommercialLimitError(record.lastError) ? "Esta manutenção está salva neste aparelho, mas aguarda uma condição comercial para sincronizar. Seus dados continuam preservados." : "Verifique sua conexão e tente novamente. O registro continua salvo neste dispositivo.");
     }
   };
 

@@ -4,7 +4,7 @@ import { Customer, Device, MaintenanceDiagnosis, MaintenanceResult, Repair, Tech
 
 const STORAGE_KEY = "@fixar:offline-maintenance:v1";
 
-export type OfflineMaintenanceStatus = "draft" | "pending" | "syncing" | "error";
+export type OfflineMaintenanceStatus = "draft" | "pending" | "syncing" | "error" | "blocked_commercial";
 export type OfflineMaintenancePayload = {
   customerId: string; deviceId: string; services: any[]; parts: any[]; comments: string;
   total: number; date: string; assignedTo?: string; reminderEnabled: boolean;
@@ -48,6 +48,10 @@ export function createOfflineMaintenanceId() {
 export function isNetworkError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error ?? "");
   return /network request failed|failed to fetch|networkerror|fetch failed|connection|offline|timeout/i.test(message);
+}
+
+export function isCommercialLimitError(error: unknown) {
+  return Boolean((error as { code?: string; message?: string } | null)?.code === "PLAN_LIMIT_REACHED" || (error as { message?: string } | null)?.message === "PLAN_LIMIT_REACHED" || error === "PLAN_LIMIT_REACHED");
 }
 
 export async function listOfflineMaintenances(scope: OfflineScope, storage: Storage = AsyncStorage) {
@@ -104,6 +108,10 @@ export async function syncOfflineMaintenance(
     await removeOfflineMaintenance(record.localId, scope, storage);
     return true;
   } catch (error) {
+    if (isCommercialLimitError(error)) {
+      await markOfflineMaintenance(record.localId, scope, "blocked_commercial", error instanceof Error ? error.message : "PLAN_LIMIT_REACHED", storage);
+      return false;
+    }
     const message = error instanceof Error ? error.message : "Não foi possível sincronizar.";
     await markOfflineMaintenance(record.localId, scope, "error", message, storage);
     return false;
@@ -115,7 +123,7 @@ export async function syncPendingMaintenances(
   send: (localId: string, payload: OfflineMaintenancePayload) => Promise<unknown>,
   storage: Storage = AsyncStorage
 ) {
-  const pending = (await listOfflineMaintenances(scope, storage)).filter((item) => item.status !== "draft");
+  const pending = (await listOfflineMaintenances(scope, storage)).filter((item) => item.status === "pending" || item.status === "error");
   const results = [];
   for (const record of pending) results.push(await syncOfflineMaintenance(record, send, storage));
   return results.filter(Boolean).length;
