@@ -7,6 +7,8 @@ const migration=readFileSync("supabase/migrations/20260902100000_commercial_expe
 const myPlan=readFileSync("src/screens/MyPlan/index.tsx","utf8");
 const plans=readFileSync("src/screens/Plans/index.tsx","utf8");
 const prompt=readFileSync("src/commercial/CommercialContext.tsx","utf8");
+const reportCompany=readFileSync("src/services/reportCompany.ts","utf8");
+const equipmentLabels=readFileSync("src/screens/EquipmentLabels/index.tsx","utf8");
 const base:any={plan_code:"free",display_name:"Grátis",subscription_status:"active",offer_code:null,billing_cycle:"monthly",price_cents:0,limits:{users:1,customers:10,equipment:15,qr_codes:5,work_orders_monthly:5,quotes_monthly:3},features:{batch_orders:false,custom_branding:false,full_history:false},history_days:30};
 
 test("Meu Plano distingue ilimitado, próximo, atingido e acima do limite",()=>{assert.equal(usageState(3,5),"normal");assert.equal(usageState(4,5),"near");assert.equal(usageState(5,5),"reached");assert.equal(usageState(87,5),"reached");assert.equal(usageState(3,null),"unlimited");assert.match(myPlan,/Ilimitado/);assert.match(myPlan,/Acima do limite atual/);});
@@ -15,4 +17,5 @@ test("Founder permanece oferta Professional com preço real",()=>{const e=mapCom
 test("Planos não simula pagamento",()=>{assert.match(plans,/Tenho interesse/);assert.match(plans,/Nenhuma cobrança foi realizada/);assert.doesNotMatch(plans,/Assinar agora|checkout|cartão/i);});
 test("UpgradePrompt é único e contextual",()=>{assert.match(prompt,/showUpgrade/);assert.match(prompt,/Conhecer planos/);assert.match(prompt,/Agora não/);});
 test("backend protege batch e histórico sem apagar dados",()=>{assert.match(migration,/assert_can_use_feature\(organization_id,'batch_orders'\)/);assert.match(migration,/can_access_work_order_history/);assert.doesNotMatch(migration,/delete from public\.work_orders/);});
-test("branding e Global Admin usam entitlements e subscriptions auditadas",()=>{assert.match(migration,/custom_branding/);assert.match(migration,/platform_admin_update_commercial/);assert.match(migration,/insert into public\.organization_subscriptions/);assert.match(migration,/organization_plan_overrides/);});
+test("branding preserva dados e condiciona somente a logomarca",()=>{assert.match(reportCompany,/\.\.\.source, logo_url: brandingEnabled \? logoUrl : null/);assert.match(equipmentLabels,/entitlements\?\.features\.custom_branding && session\?\.organization\.logo_path/);assert.doesNotMatch(reportCompany,/delete|remove/);assert.match(migration,/case when \(e->'features'->>'custom_branding'\)::boolean then o\.logo_path end/);});
+test("Global Admin usa subscriptions e overrides auditados",()=>{assert.match(migration,/platform_admin_update_commercial/);assert.match(migration,/insert into public\.organization_subscriptions/);assert.match(migration,/organization_plan_overrides/);});
